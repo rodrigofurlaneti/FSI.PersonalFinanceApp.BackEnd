@@ -1,0 +1,28 @@
+﻿namespace FSI.PersonalFinanceApp.Application.Interfaces
+{
+    public interface IBaseAppService<TDto>
+    {
+        #region Métodos padrão das entidades
+
+        // Get All
+        Task<IEnumerable<TDto>> GetAllAsync();
+        IEnumerable<TDto> GetAllSync();
+
+        // Get By Id
+        Task<TDto?> GetByIdAsync(long id);
+        TDto? GetByIdSync(long id);
+
+        // Add
+        Task AddAsync(TDto dto);
+        void AddSync(TDto dto);
+
+        // Update
+        Task UpdateAsync(TDto dto);
+        void UpdateSync(TDto dto);
+
+        // Delete
+        Task DeleteAsync(TDto dto); 
+
+        #endregion
+    }
+}
