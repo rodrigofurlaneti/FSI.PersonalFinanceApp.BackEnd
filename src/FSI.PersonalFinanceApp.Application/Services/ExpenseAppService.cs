@@ -1,6 +1,7 @@
 ﻿using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
 using FSI.PersonalFinanceApp.Application.Mapper;
+using FSI.PersonalFinanceApp.Domain.Entities;
 using FSI.PersonalFinanceApp.Domain.Interfaces;
 
 namespace FSI.PersonalFinanceApp.Application.Services
@@ -13,6 +14,8 @@ namespace FSI.PersonalFinanceApp.Application.Services
         {
             _repository = repository;
         }
+
+        #region Methods from IBaseAppService
 
         public async Task<IEnumerable<ExpenseDto>> GetAllAsync()
         {
@@ -68,5 +71,58 @@ namespace FSI.PersonalFinanceApp.Application.Services
             await _repository.DeleteAsync(entity);
         }
 
+        #endregion
+
+        #region Additional Methods
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Name_Asc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_Name_Asc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Name_Desc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_Name_Desc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Description_Asc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_Description_Asc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Description_Desc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_Description_Desc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Desc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_PaidAt_Desc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Asc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_PaidAt_Asc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Desc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_DueDate_Desc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Asc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_DueDate_Asc_Async();
+            return entities;
+        }
+
+        #endregion
     }
 }
