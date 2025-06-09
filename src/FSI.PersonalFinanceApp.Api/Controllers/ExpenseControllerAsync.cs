@@ -115,6 +115,20 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("GetAllOrderByAmountAsc")]
+        public async Task<IActionResult> GetAllOrderByAmountAsc()
+        {
+            var result = await _service.GetAll_Orderby_Amount_Asc_Async();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByAmountDesc")]
+        public async Task<IActionResult> GetAllOrderByAmountDesc()
+        {
+            var result = await _service.GetAll_Orderby_Amount_Desc_Async();
+            return Ok(result);
+        }
+
         #endregion
     }
 }

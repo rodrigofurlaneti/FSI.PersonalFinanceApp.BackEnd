@@ -14,5 +14,7 @@ namespace FSI.PersonalFinanceApp.Application.Interfaces
         Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Desc_Async();
         Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Asc_Async();
         Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Desc_Async();
+        Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Asc_Async();
+        Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Desc_Async();
     }
 }

@@ -171,6 +171,18 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_PaidAt_Desc", commandType: CommandType.StoredProcedure);
         }
 
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Asc_Async()
+        {
+            using var connection = CreateConnection();
+            return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Amount_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Desc_Async()
+        {
+            using var connection = CreateConnection();
+            return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Amount_Desc", commandType: CommandType.StoredProcedure);
+        }
+
         #endregion
     }
 }

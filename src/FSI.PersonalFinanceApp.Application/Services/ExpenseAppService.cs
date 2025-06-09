@@ -123,6 +123,18 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entities;
         }
 
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Desc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_Amount_Desc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Asc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_Amount_Asc_Async();
+            return entities;
+        }
+
         #endregion
     }
 }
