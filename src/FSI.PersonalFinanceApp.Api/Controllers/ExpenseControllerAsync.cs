@@ -59,6 +59,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #region Additional Methods  
 
+        //Name
         [HttpGet("GetAllOrderByNameAsc")]
         public async Task<IActionResult> GetAllOrderByNameAsc()
         {
@@ -73,6 +74,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             return Ok(result);
         }
 
+        //Description
         [HttpGet("GetAllOrderByDescriptionAsc")]
         public async Task<IActionResult> GetAllOrderByDescriptionAsc()
         {
@@ -87,6 +89,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             return Ok(result);
         }
 
+        //DueDate
         [HttpGet("GetAllOrderByDueDateAsc")]
         public async Task<IActionResult> GetAllOrderByDueDateAsc()
         {
@@ -101,6 +104,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             return Ok(result);
         }
 
+        //PaidAt
         [HttpGet("GetAllOrderByPaidAtAsc")]
         public async Task<IActionResult> GetAllOrderByPaidAtAsc()
         {
@@ -115,6 +119,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             return Ok(result);
         }
 
+        //Amount
         [HttpGet("GetAllOrderByAmountAsc")]
         public async Task<IActionResult> GetAllOrderByAmountAsc()
         {
@@ -126,6 +131,21 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         public async Task<IActionResult> GetAllOrderByAmountDesc()
         {
             var result = await _service.GetAll_Orderby_Amount_Desc_Async();
+            return Ok(result);
+        }
+
+        //ExpenseCategoryId
+        [HttpGet("GetAllOrderByExpenseCategoryIdAsc")]
+        public async Task<IActionResult> GetAllOrderByExpenseCategoryIdAsc()
+        {
+            var result = await _service.GetAll_Orderby_Amount_Asc_Async();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByExpenseCategoryIdDesc")]
+        public async Task<IActionResult> GetAllOrderByExpenseCategoryIdDesc()
+        {
+            var result = await _service.GetAll_Orderby_ExpenseCategoryId_Desc_Async();
             return Ok(result);
         }
 

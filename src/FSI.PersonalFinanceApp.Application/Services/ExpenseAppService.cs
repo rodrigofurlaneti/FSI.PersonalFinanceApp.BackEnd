@@ -75,6 +75,7 @@ namespace FSI.PersonalFinanceApp.Application.Services
 
         #region Additional Methods
 
+        //Name
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Name_Asc_Async()
         {
             var entities = await _repository.GetAll_Orderby_Name_Asc_Async();
@@ -87,6 +88,7 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entities;
         }
 
+        //Description
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Description_Asc_Async()
         {
             var entities = await _repository.GetAll_Orderby_Description_Asc_Async();
@@ -99,6 +101,7 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entities;
         }
 
+        //PaidAt
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Desc_Async()
         {
             var entities = await _repository.GetAll_Orderby_PaidAt_Desc_Async();
@@ -111,6 +114,7 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entities;
         }
 
+        //DueDate
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Desc_Async()
         {
             var entities = await _repository.GetAll_Orderby_DueDate_Desc_Async();
@@ -123,6 +127,7 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entities;
         }
 
+        //Amount
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Desc_Async()
         {
             var entities = await _repository.GetAll_Orderby_Amount_Desc_Async();
@@ -132,6 +137,19 @@ namespace FSI.PersonalFinanceApp.Application.Services
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Asc_Async()
         {
             var entities = await _repository.GetAll_Orderby_Amount_Asc_Async();
+            return entities;
+        }
+
+        //ExpenseCategoryId
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_ExpenseCategoryId_Desc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_ExpenseCategoryId_Desc_Async();
+            return entities;
+        }
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_ExpenseCategoryId_Asc_Async()
+        {
+            var entities = await _repository.GetAll_Orderby_ExpenseCategoryId_Asc_Async();
             return entities;
         }
 
