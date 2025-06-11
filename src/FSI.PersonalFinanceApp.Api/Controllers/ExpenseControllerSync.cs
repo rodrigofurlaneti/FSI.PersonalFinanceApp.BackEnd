@@ -10,11 +10,13 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
     {
         private readonly IExpenseAppService _service;
         private readonly ITrafficAppService _serviceTraffic;
+        private readonly ILogger<ExpenseControllerSync> _logger;
 
-        public ExpenseControllerSync(IExpenseAppService service, ITrafficAppService serviceTraffic)
+        public ExpenseControllerSync(IExpenseAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseControllerSync> logger)
         {
             _service = service;
             _serviceTraffic = serviceTraffic;
+            _logger = logger;
         }
 
         #region CRUD Operations
@@ -22,143 +24,179 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _service.GetAllSync();
-            return Ok(result);
+            try
+            {
+                LogTraffic("GET - GetAll - Expense - Sync", "Request");
+
+                var result = _service.GetAllSync();
+
+                LogTraffic("GET - GetAll - Expense - Sync", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error getting expenses");
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpGet("{id:long}")]
         public IActionResult GetById(long id)
         {
-            var result = _service.GetByIdSync(id);
-            return result is null ? NotFound() : Ok(result);
+            try
+            {
+                LogTraffic("GET - GetById - Expense - Sync", "Request");
+
+                var result = _service.GetByIdAsync(id);
+
+                LogTraffic("GET - GetById - Expense - Sync", "Response");
+
+                if (result is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseId} not found", id);
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving expense with id {ExpenseId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] ExpenseDto dto)
         {
-            //Log the request traffic
-            TrafficDto trafficDtoRequest = new TrafficDto("POST - Create - Expense - Sync", "Request", DateTime.Now);
-            _serviceTraffic.AddSync(trafficDtoRequest);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for expense creation: {@ExpenseDto}", dto);
+                    return BadRequest(ModelState);
+                }
 
-            //Add the expense
-            _service.AddSync(dto);
+                LogTraffic("POST - Create - Expense - Sync", "Request");
 
-            //Log the response traffic
-            TrafficDto trafficDtoResponse = new TrafficDto("POST - Create - Expense - Sync", "Response", DateTime.Now);
-            _serviceTraffic.AddSync(trafficDtoResponse);
+                _service.AddSync(dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+                LogTraffic("POST - Create - Expense - Sync", "Response");
+
+                _logger.LogInformation("Expense created with id {ExpenseId}", dto.Id);
+
+                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating expense: {@ExpenseDto}", dto);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPut("{id:long}")]
         public IActionResult Update(long id, [FromBody] ExpenseDto dto)
         {
-            if (id != dto.Id) return BadRequest("ID mismatch");
-            _service.UpdateSync(dto);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for expense update: {@ExpenseDto}", dto);
+                    return BadRequest(ModelState);
+                }
+
+                if (id != dto.Id)
+                {
+                    _logger.LogWarning("Expense ID mismatch: route id = {RouteId}, dto id = {DtoId}", id, dto.Id);
+                    return BadRequest("ID mismatch");
+                }
+
+                LogTraffic("PUT - Update - Expense - Sync", "Request");
+
+                var existingExpense = _service.GetByIdSync(id);
+                if (existingExpense is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseId} not found for update", id);
+                    return NotFound();
+                }
+
+                _service.UpdateSync(dto);
+
+                LogTraffic("PUT - Update - Expense - Sync", "Response");
+
+                _logger.LogInformation("Expense with id {ExpenseId} updated successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating expense with id {ExpenseId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpDelete("{id:long}")]
         public IActionResult Delete(long id)
         {
-            var expenseDtoExisting = _service.GetByIdSync(id);
-            if (expenseDtoExisting is null) return NotFound();
-            _service.DeleteSync(expenseDtoExisting);
-            return NoContent();
+            try
+            {
+                LogTraffic("DELETE - Delete - Expense - Sync", "Request");
+
+                var existingExpense = _service.GetByIdSync(id);
+                if (existingExpense is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseId} not found for deletion", id);
+                    return NotFound();
+                }
+
+                _service.DeleteSync(existingExpense);
+
+                LogTraffic("DELETE - Delete - Expense - Sync", "Response");
+
+                _logger.LogInformation("Expense with id {ExpenseId} deleted successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting expense with id {ExpenseId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         #endregion
 
         #region Additional Methods  
 
-        //Name
-        [HttpGet("GetAllOrderByNameAsc")]
-        public IActionResult GetAllOrderByNameAsc()
+        [HttpGet("ordered")]
+        public IActionResult GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
         {
-            var result = _service.GetAll_Orderby_Name_Asc_Sync();
-            return Ok(result);
+            try
+            {
+                LogTraffic("GET - GetAllOrdered - Expense - Sync", "Request");
+
+                var result = _service.GetAllOrderedSync(orderBy, direction);
+
+                LogTraffic("GET - GetAllOrdered - Expense - Sync", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ordering expenses by {OrderBy} {Direction}", orderBy, direction);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
-        [HttpGet("GetAllOrderByNameDesc")]
-        public IActionResult GetAllOrderByNameDesc()
-        {
-            var result = _service.GetAll_Orderby_Name_Desc_Sync();
-            return Ok(result);
-        }
+        #endregion
 
-        //Description
-        [HttpGet("GetAllOrderByDescriptionAsc")]
-        public IActionResult GetAllOrderByDescriptionAsc()
-        {
-            var result = _service.GetAll_Orderby_Description_Asc_Sync();
-            return Ok(result);
-        }
+        #region Additional Methods Private 
 
-        [HttpGet("GetAllOrderByDescriptionDesc")]
-        public IActionResult GetAllOrderByDescriptionDesc()
+        private void LogTraffic(string method, string action)
         {
-            var result = _service.GetAll_Orderby_Description_Desc_Sync();
-            return Ok(result);
-        }
-
-        //DueDate
-        [HttpGet("GetAllOrderByDueDateAsc")]
-        public IActionResult GetAllOrderByDueDateAsc()
-        {
-            var result = _service.GetAll_Orderby_DueDate_Asc_Sync();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByDueDateDesc")]
-        public IActionResult GetAllOrderByDueDateDesc()
-        {
-            var result = _service.GetAll_Orderby_DueDate_Desc_Sync();
-            return Ok(result);
-        }
-
-        //PaidAt
-        [HttpGet("GetAllOrderByPaidAtAsc")]
-        public IActionResult GetAllOrderByPaidAtAsc()
-        {
-            var result = _service.GetAll_Orderby_PaidAt_Asc_Sync();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByPaidAtDesc")]
-        public IActionResult GetAllOrderByPaidAtDesc()
-        {
-            var result = _service.GetAll_Orderby_PaidAt_Desc_Sync();
-            return Ok(result);
-        }
-
-        //Amount
-        [HttpGet("GetAllOrderByAmountAsc")]
-        public IActionResult GetAllOrderByAmountAsc()
-        {
-            var result = _service.GetAll_Orderby_Amount_Asc_Sync();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByAmountDesc")]
-        public IActionResult GetAllOrderByAmountDesc()
-        {
-            var result = _service.GetAll_Orderby_Amount_Desc_Sync();
-            return Ok(result);
-        }
-
-        //ExpenseCategoryId
-        [HttpGet("GetAllOrderByExpenseCategoryIdAsc")]
-        public IActionResult GetAllOrderByExpenseCategoryIdAsc()
-        {
-            var result = _service.GetAll_Orderby_Amount_Asc_Sync();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByExpenseCategoryIdDesc")]
-        public IActionResult GetAllOrderByExpenseCategoryIdDesc()
-        {
-            var result = _service.GetAll_Orderby_ExpenseCategoryId_Desc_Sync();
-            return Ok(result);
+            var dto = new TrafficDto(method, action, DateTime.Now);
+            _serviceTraffic.AddSync(dto);
         }
 
         #endregion

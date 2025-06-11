@@ -1,5 +1,6 @@
-﻿using FSI.PersonalFinanceApp.Api.DependencyInjection;
-using AutoMapper;
+﻿using AutoMapper;
+using FSI.PersonalFinanceApp.Api.DependencyInjection;
+using FSI.PersonalFinanceApp.Api.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,10 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// ⛑️ Middleware global de tratamento de exceções
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// ⚙️ Swagger para ambiente de desenvolvimento
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

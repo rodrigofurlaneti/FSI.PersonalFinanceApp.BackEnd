@@ -10,11 +10,13 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
     {
         private readonly IExpenseAppService _service;
         private readonly ITrafficAppService _serviceTraffic;
+        private readonly ILogger<ExpenseControllerAsync> _logger;
 
-        public ExpenseControllerAsync(IExpenseAppService service, ITrafficAppService serviceTraffic)
+        public ExpenseControllerAsync(IExpenseAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseControllerAsync> logger)
         {
             _service = service;
             _serviceTraffic = serviceTraffic;
+            _logger = logger;
         }
 
         #region CRUD Operations
@@ -22,143 +24,180 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _service.GetAllAsync();
-            return Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetAll - Expense - Async", "Request");
+
+                var result = await _service.GetAllAsync();
+
+                await LogTraffic("GET - GetAll - Expense - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error getting expenses");
+                return StatusCode(500, "Error processing request");
+            }
+
         }
 
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetById(long id)
         {
-            var result = await _service.GetByIdAsync(id);
-            return result is null ? NotFound() : Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetById - Expense - Async", "Request");
+
+                var result = await _service.GetByIdAsync(id);
+
+                await LogTraffic("GET - GetById - Expense - Async", "Response");
+
+                if (result is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseId} not found", id);
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving expense with id {ExpenseId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ExpenseDto dto)
         {
-            //Log the request traffic
-            TrafficDto trafficDtoResquest = new TrafficDto("POST - Create - Expense - Async", "Request", DateTime.Now);
-            _serviceTraffic.AddSync(trafficDtoResquest);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for expense creation: {@ExpenseDto}", dto);
+                    return BadRequest(ModelState);
+                }
 
-            //Add the expense
-            await _service.AddAsync(dto);
+                await LogTraffic("POST - Create - Expense - Async", "Request");
 
-            //Log the response traffic
-            TrafficDto trafficDtoResponse = new TrafficDto("POST - Create - Expense - Async", "Response", DateTime.Now);
-            _serviceTraffic.AddSync(trafficDtoResponse);
+                await _service.AddAsync(dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+                await LogTraffic("POST - Create - Expense - Async", "Response");
+
+                _logger.LogInformation("Expense created with id {ExpenseId}", dto.Id);
+
+                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating expense: {@ExpenseDto}", dto);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] ExpenseDto dto)
         {
-            if (id != dto.Id) return BadRequest("ID mismatch");
-            await _service.UpdateAsync(dto);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for expense update: {@ExpenseDto}", dto);
+                    return BadRequest(ModelState);
+                }
+
+                if (id != dto.Id)
+                {
+                    _logger.LogWarning("Expense ID mismatch: route id = {RouteId}, dto id = {DtoId}", id, dto.Id);
+                    return BadRequest("ID mismatch");
+                }
+
+                await LogTraffic("PUT - Update - Expense - Async", "Request");
+
+                var existingExpense = await _service.GetByIdAsync(id);
+                if (existingExpense is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseId} not found for update", id);
+                    return NotFound();
+                }
+
+                await _service.UpdateAsync(dto);
+
+                await LogTraffic("PUT - Update - Expense - Async", "Response");
+
+                _logger.LogInformation("Expense with id {ExpenseId} updated successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating expense with id {ExpenseId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {
-            var expenseDtoExisting = await _service.GetByIdAsync(id);
-            if (expenseDtoExisting is null) return NotFound();
-            await _service.DeleteAsync(expenseDtoExisting);
-            return NoContent();
+            try
+            {
+                await LogTraffic("DELETE - Delete - Expense - Async", "Request");
+
+                var existingExpense = await _service.GetByIdAsync(id);
+                if (existingExpense is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseId} not found for deletion", id);
+                    return NotFound();
+                }
+
+                await _service.DeleteAsync(existingExpense);
+
+                await LogTraffic("DELETE - Delete - Expense - Async", "Response");
+
+                _logger.LogInformation("Expense with id {ExpenseId} deleted successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting expense with id {ExpenseId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         #endregion
 
         #region Additional Methods  
 
-        //Name
-        [HttpGet("GetAllOrderByNameAsc")]
-        public async Task<IActionResult> GetAllOrderByNameAsc()
+        [HttpGet("ordered")]
+        public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
         {
-            var result = await _service.GetAll_Orderby_Name_Asc_Async();
-            return Ok(result);
-        }
-        
-        [HttpGet("GetAllOrderByNameDesc")]
-        public async Task<IActionResult> GetAllOrderByNameDesc()
-        {
-            var result = await _service.GetAll_Orderby_Name_Desc_Async();
-            return Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetAllOrdered - Expense - Async", "Request");
+
+                var result = await _service.GetAllOrderedAsync(orderBy, direction);
+
+                await LogTraffic("GET - GetAllOrdered - Expense - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ordering expenses by {OrderBy} {Direction}", orderBy, direction);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
-        //Description
-        [HttpGet("GetAllOrderByDescriptionAsc")]
-        public async Task<IActionResult> GetAllOrderByDescriptionAsc()
-        {
-            var result = await _service.GetAll_Orderby_Description_Asc_Async();
-            return Ok(result);
-        }
+        #endregion
 
-        [HttpGet("GetAllOrderByDescriptionDesc")]
-        public async Task<IActionResult> GetAllOrderByDescriptionDesc()
-        {
-            var result = await _service.GetAll_Orderby_Description_Desc_Async();
-            return Ok(result);
-        }
+        #region Additional Methods Private 
 
-        //DueDate
-        [HttpGet("GetAllOrderByDueDateAsc")]
-        public async Task<IActionResult> GetAllOrderByDueDateAsc()
+        private async Task LogTraffic(string method, string action)
         {
-            var result = await _service.GetAll_Orderby_DueDate_Asc_Async();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByDueDateDesc")]
-        public async Task<IActionResult> GetAllOrderByDueDateDesc()
-        {
-            var result = await _service.GetAll_Orderby_DueDate_Desc_Async();
-            return Ok(result);
-        }
-
-        //PaidAt
-        [HttpGet("GetAllOrderByPaidAtAsc")]
-        public async Task<IActionResult> GetAllOrderByPaidAtAsc()
-        {
-            var result = await _service.GetAll_Orderby_PaidAt_Asc_Async();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByPaidAtDesc")]
-        public async Task<IActionResult> GetAllOrderByPaidAtDesc()
-        {
-            var result = await _service.GetAll_Orderby_PaidAt_Desc_Async();
-            return Ok(result);
-        }
-
-        //Amount
-        [HttpGet("GetAllOrderByAmountAsc")]
-        public async Task<IActionResult> GetAllOrderByAmountAsc()
-        {
-            var result = await _service.GetAll_Orderby_Amount_Asc_Async();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByAmountDesc")]
-        public async Task<IActionResult> GetAllOrderByAmountDesc()
-        {
-            var result = await _service.GetAll_Orderby_Amount_Desc_Async();
-            return Ok(result);
-        }
-
-        //ExpenseCategoryId
-        [HttpGet("GetAllOrderByExpenseCategoryIdAsc")]
-        public async Task<IActionResult> GetAllOrderByExpenseCategoryIdAsc()
-        {
-            var result = await _service.GetAll_Orderby_Amount_Asc_Async();
-            return Ok(result);
-        }
-
-        [HttpGet("GetAllOrderByExpenseCategoryIdDesc")]
-        public async Task<IActionResult> GetAllOrderByExpenseCategoryIdDesc()
-        {
-            var result = await _service.GetAll_Orderby_ExpenseCategoryId_Desc_Async();
-            return Ok(result);
+            var dto = new TrafficDto(method, action, DateTime.Now);
+            await _serviceTraffic.AddAsync(dto);
         }
 
         #endregion

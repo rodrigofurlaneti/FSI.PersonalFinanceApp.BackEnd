@@ -81,160 +81,16 @@ namespace FSI.PersonalFinanceApp.Application.Services
 
         #region Additional Methods
 
-        //Name Async
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Name_Asc_Async()
+        public async Task<IEnumerable<ExpenseDto>> GetAllOrderedAsync(string orderBy, string direction)
         {
-            var entities = await _repository.GetAll_Orderby_Name_Asc_Async();
-            return entities;
+            var entities = await _repository.GetAllOrderedAsync(orderBy, direction);
+            return entities.Select(ExpenseMapper.ToDto);
         }
 
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Name_Desc_Async()
+        public IEnumerable<ExpenseDto> GetAllOrderedSync(string orderBy, string direction)
         {
-            var entities = await _repository.GetAll_Orderby_Name_Desc_Async();
-            return entities;
-        }
-
-        //Name Sync
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_Name_Asc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_Name_Asc_Sync();
-            return entities;
-        }
-
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_Name_Desc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_Name_Desc_Sync();
-            return entities;
-        }
-
-        //Description Async
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Description_Asc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_Description_Asc_Async();
-            return entities;
-        }
-
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Description_Desc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_Description_Desc_Async();
-            return entities;
-        }
-
-        //Description Sync
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_Description_Asc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_Description_Asc_Sync();
-            return entities;
-        }
-
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_Description_Desc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_Description_Desc_Sync();
-            return entities;
-        }
-
-        //PaidAt Async
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Desc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_PaidAt_Desc_Async();
-            return entities;
-        }
-
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Asc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_PaidAt_Asc_Async();
-            return entities;
-        }
-
-        //PaidAt Sync
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_PaidAt_Desc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_PaidAt_Desc_Sync();
-            return entities;
-        }
-
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_PaidAt_Asc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_PaidAt_Asc_Sync();
-            return entities;
-        }
-
-        //DueDate Async
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Desc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_DueDate_Desc_Async();
-            return entities;
-        }
-
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Asc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_DueDate_Asc_Async();
-            return entities;
-        }
-
-        //DueDate Sync
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_DueDate_Desc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_DueDate_Desc_Sync();
-            return entities;
-        }
-
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_DueDate_Asc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_DueDate_Asc_Sync();
-            return entities;
-        }
-
-        //Amount Async
-         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Desc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_Amount_Desc_Async();
-            return entities;
-        }
-
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Asc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_Amount_Asc_Async();
-            return entities;
-        }
-
-        //Amount Sync
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_Amount_Desc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_Amount_Desc_Sync();
-            return entities;
-        }
-
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_Amount_Asc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_Amount_Asc_Sync();
-            return entities;
-        }
-
-        //ExpenseCategoryId Async
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_ExpenseCategoryId_Desc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_ExpenseCategoryId_Desc_Async();
-            return entities;
-        }
-
-        public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_ExpenseCategoryId_Asc_Async()
-        {
-            var entities = await _repository.GetAll_Orderby_ExpenseCategoryId_Asc_Async();
-            return entities;
-        }
-
-        //ExpenseCategoryId Sync
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_ExpenseCategoryId_Desc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_ExpenseCategoryId_Desc_Sync();
-            return entities;
-        }
-
-        public IEnumerable<ExpenseEntity> GetAll_Orderby_ExpenseCategoryId_Asc_Sync()
-        {
-            var entities = _repository.GetAll_Orderby_ExpenseCategoryId_Asc_Sync();
-            return entities;
+            var entities = _repository.GetAllOrderedSync(orderBy, direction);
+            return entities.Select(ExpenseMapper.ToDto);
         }
 
         #endregion
