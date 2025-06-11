@@ -13,6 +13,7 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
                 Id = dto.Id,
                 Method = dto.Method,
                 Action = dto.Action,
+                BackEndCreatedAt = dto.BackEndCreatedAt ?? DateTime.Now,
                 CreatedAt = dto.CreatedAt ?? DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 IsActive = dto.IsActive
@@ -25,6 +26,7 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
                 Id = entity.Id,
                 Method = entity.Method,
                 Action = entity.Action,
+                BackEndCreatedAt = entity.BackEndCreatedAt ?? DateTime.Now,
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt,
                 IsActive = entity.IsActive

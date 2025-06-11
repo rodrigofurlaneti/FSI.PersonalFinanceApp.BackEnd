@@ -50,6 +50,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             {
                 entity.Method,
                 entity.Action,
+                entity.BackEndCreatedAt, 
                 entity.IsActive,
                 entity.CreatedAt,
                 entity.UpdatedAt
@@ -63,6 +64,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             {
                 entity.Method,
                 entity.Action,
+                entity.BackEndCreatedAt,
                 entity.IsActive,
                 entity.CreatedAt,
                 entity.UpdatedAt

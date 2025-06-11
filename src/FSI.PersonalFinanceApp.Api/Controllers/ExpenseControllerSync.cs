@@ -37,15 +37,15 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         public IActionResult Create([FromBody] ExpenseDto dto)
         {
             //Log the request traffic
-            TrafficDto trafficDto = new TrafficDto("POST - Create - Expense - Sync", "Request");
-            _serviceTraffic.AddSync(trafficDto);
+            TrafficDto trafficDtoRequest = new TrafficDto("POST - Create - Expense - Sync", "Request", DateTime.Now);
+            _serviceTraffic.AddSync(trafficDtoRequest);
 
             //Add the expense
             _service.AddSync(dto);
 
             //Log the response traffic
-            TrafficDto trafficDto = new TrafficDto("POST - Create - Expense - Sync", "Response");
-            _serviceTraffic.AddSync(trafficDto);
+            TrafficDto trafficDtoResponse = new TrafficDto("POST - Create - Expense - Sync", "Response", DateTime.Now);
+            _serviceTraffic.AddSync(trafficDtoResponse);
 
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }

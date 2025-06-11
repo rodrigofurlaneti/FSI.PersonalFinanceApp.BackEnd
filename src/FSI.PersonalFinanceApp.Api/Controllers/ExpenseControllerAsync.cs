@@ -37,15 +37,15 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         public async Task<IActionResult> Create([FromBody] ExpenseDto dto)
         {
             //Log the request traffic
-            TrafficDto trafficDto = new TrafficDto("POST - Create - Expense - Async", "Request");
-            _serviceTraffic.AddSync(trafficDto);
+            TrafficDto trafficDtoResquest = new TrafficDto("POST - Create - Expense - Async", "Request", DateTime.Now);
+            _serviceTraffic.AddSync(trafficDtoResquest);
 
             //Add the expense
             await _service.AddAsync(dto);
 
             //Log the response traffic
-            TrafficDto trafficDto = new TrafficDto("POST - Create - Expense - Async", "Response");
-            _serviceTraffic.AddSync(trafficDto);
+            TrafficDto trafficDtoResponse = new TrafficDto("POST - Create - Expense - Async", "Response", DateTime.Now);
+            _serviceTraffic.AddSync(trafficDtoResponse);
 
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
