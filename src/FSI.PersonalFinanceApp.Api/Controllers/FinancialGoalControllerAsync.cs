@@ -9,10 +9,14 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
     public class FinancialGoalControllerAsync : ControllerBase
     {
         private readonly IFinancialGoalAppService _service;
+        private readonly ITrafficAppService _serviceTraffic;
+        private readonly ILogger<FinancialGoalControllerSync> _logger;
 
-        public FinancialGoalControllerAsync(IFinancialGoalAppService service)
+        public FinancialGoalControllerAsync(IFinancialGoalAppService service, ITrafficAppService serviceTraffic, ILogger<FinancialGoalControllerSync> logger)
         {
             _service = service;
+            _serviceTraffic = serviceTraffic;
+            _logger = logger;
         }
 
         #region CRUD Operations
@@ -20,45 +24,181 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _service.GetAllAsync();
-            return Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetAll - FinancialGoal - Async", "Request");
+
+                var result = await _service.GetAllAsync();
+
+                await LogTraffic("GET - GetAll - FinancialGoal - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error getting financial goal");
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetById(long id)
         {
-            var result = await _service.GetByIdAsync(id);
-            return result is null ? NotFound() : Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetById - FinancialGoal - Async", "Request");
+
+                var result = await _service.GetByIdAsync(id);
+
+                await LogTraffic("GET - GetById - FinancialGoal - Async", "Response");
+
+                if (result is null)
+                {
+                    _logger.LogWarning("Financial goal with id {FinancialGoalId} not found", id);
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving financial goal with id {FinancialGoalId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] FinancialGoalDto dto)
         {
-            await _service.AddAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for financial goal creation: {@FinancialGoalDto}", dto);
+                    return BadRequest(ModelState);
+                }
+
+                await LogTraffic("POST - Create - FinancialGoal - Async", "Request");
+
+                await _service.AddAsync(dto);
+
+                await LogTraffic("POST - Create - FinancialGoal - Async", "Response");
+
+                _logger.LogInformation("Financial goal created with id {FinancialGoalId}", dto.Id);
+
+                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating financial goal: {@FinancialGoalDto}", dto);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] FinancialGoalDto dto)
         {
-            if (id != dto.Id) return BadRequest("ID mismatch");
-            await _service.UpdateAsync(dto);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for financial goal update: {@FinancialGoalDto}", dto);
+                    return BadRequest(ModelState);
+                }
+
+                if (id != dto.Id)
+                {
+                    _logger.LogWarning("Financial goal ID mismatch: route id = {RouteId}, dto id = {DtoId}", id, dto.Id);
+                    return BadRequest("ID mismatch");
+                }
+
+                await LogTraffic("PUT - Update - FinancialGoal - Async", "Request");
+
+                var existingFinancialGoal = await _service.GetByIdAsync(id);
+                if (existingFinancialGoal is null)
+                {
+                    _logger.LogWarning("Financial goal with id {FinancialGoalId} not found for update", id);
+                    return NotFound();
+                }
+
+                await _service.UpdateAsync(dto);
+
+                await LogTraffic("PUT - Update - FinancialGoal - Async", "Response");
+
+                _logger.LogInformation("Financial goal with id {FinancialGoalId} updated successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating financial goal with id {FinancialGoalId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {
-            var financialGoalDtoExisting = await _service.GetByIdAsync(id);
-            if (financialGoalDtoExisting is null) return NotFound();
-            await _service.DeleteAsync(financialGoalDtoExisting);
-            return NoContent();
+            try
+            {
+                await LogTraffic("DELETE - Delete - FinancialGoal - Async", "Request");
+
+                var existingFinancialGoal = await _service.GetByIdAsync(id);
+                if (existingFinancialGoal is null)
+                {
+                    _logger.LogWarning("FinancialGoal with id {FinancialGoalId} not found for deletion", id);
+                    return NotFound();
+                }
+
+                await _service.DeleteAsync(existingFinancialGoal);
+
+                await LogTraffic("DELETE - Delete - FinancialGoal - Async", "Response");
+
+                _logger.LogInformation("Financial goal with id {FinancialGoalId} deleted successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting financial goal with id {FinancialGoalId}", id);
+                return StatusCode(500, "Error processing request");
+            }
+        }
+
+        [HttpGet("ordered")]
+        public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
+        {
+            try
+            {
+                await LogTraffic("GET - GetAllOrdered - FinancialGoal - Async", "Request");
+
+                var result = await _service.GetAllOrderedAsync(orderBy, direction);
+
+                await LogTraffic("GET - GetAllOrdered - FinancialGoal - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ordering financial goal by {OrderBy} {Direction}", orderBy, direction);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         #endregion
 
         #region Additional Methods
         // Add any additional methods specific to financial goals here, if needed.
+        #endregion
+
+        #region Additional Methods Private 
+
+        private async Task LogTraffic(string method, string action)
+        {
+            var dto = new TrafficDto(method, action, DateTime.Now);
+            await _serviceTraffic.AddAsync(dto);
+        }
+
         #endregion
     }
 }

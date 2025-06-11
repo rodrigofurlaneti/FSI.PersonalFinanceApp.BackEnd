@@ -165,10 +165,6 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
         }
 
-        #endregion
-
-        #region Ordered Methods Additional
-
         [HttpGet("ordered")]
         public IActionResult GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
         {
@@ -188,6 +184,10 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 return StatusCode(500, "Error processing request");
             }
         }
+
+        #endregion
+
+        #region Ordered Methods Additional
 
         #endregion
 

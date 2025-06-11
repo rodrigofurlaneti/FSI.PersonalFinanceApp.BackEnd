@@ -39,7 +39,6 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 _logger.LogError(exception, "Error getting expenses");
                 return StatusCode(500, "Error processing request");
             }
-
         }
 
         [HttpGet("{id:long}")]
@@ -166,10 +165,6 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
         }
 
-        #endregion
-
-        #region Additional Methods  
-
         [HttpGet("ordered")]
         public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
         {
@@ -189,6 +184,10 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 return StatusCode(500, "Error processing request");
             }
         }
+
+        #endregion
+
+        #region Additional Methods  
 
         #endregion
 

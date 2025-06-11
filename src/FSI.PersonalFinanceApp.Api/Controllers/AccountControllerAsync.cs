@@ -5,14 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
-    [Route("api/incomes/async")]
-    public class IncomeControllerAsync : ControllerBase
+    [Route("api/accounts/async")]
+    public class AccountControllerAsync : ControllerBase
     {
-        private readonly IIncomeAppService _service;
+        private readonly IAccountAppService _service;
         private readonly ITrafficAppService _serviceTraffic;
-        private readonly ILogger<IncomeControllerAsync> _logger;
+        private readonly ILogger<AccountControllerAsync> _logger;
 
-        public IncomeControllerAsync(IIncomeAppService service, ITrafficAppService serviceTraffic, ILogger<IncomeControllerAsync> logger)
+        public AccountControllerAsync(IAccountAppService service, ITrafficAppService serviceTraffic, ILogger<AccountControllerAsync> logger)
         {
             _service = service;
             _serviceTraffic = serviceTraffic;
@@ -26,17 +26,17 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAll - Income - Async", "Request");
+                await LogTraffic("GET - GetAll - Account - Async", "Request");
 
                 var result = await _service.GetAllAsync();
 
-                await LogTraffic("GET - GetAll - Income - Async", "Response");
+                await LogTraffic("GET - GetAll - Account - Async", "Response");
 
                 return Ok(result);
             }
             catch (Exception exception)
             {
-                _logger.LogError(exception, "Error getting income");
+                _logger.LogError(exception, "Error getting account");
                 return StatusCode(500, "Error processing request");
             }
         }
@@ -46,15 +46,15 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetById - Income - Async", "Request");
+                await LogTraffic("GET - GetById - Account - Async", "Request");
 
                 var result = await _service.GetByIdAsync(id);
 
-                await LogTraffic("GET - GetById - Income - Async", "Response");
+                await LogTraffic("GET - GetById - Account - Async", "Response");
 
                 if (result is null)
                 {
-                    _logger.LogWarning("Income with id {IncomeId} not found", id);
+                    _logger.LogWarning("Account with id {AccountId} not found", id);
                     return NotFound();
                 }
 
@@ -62,76 +62,76 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving income with id {IncomeId}", id);
+                _logger.LogError(ex, "Error retrieving account with id {AccountId}", id);
                 return StatusCode(500, "Error processing request");
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] IncomeDto dto)
+        public async Task<IActionResult> Create([FromBody] AccountDto dto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("Invalid model state for income creation: {@IncomeDto}", dto);
+                    _logger.LogWarning("Invalid model state for expense creation: {@AccountDto}", dto);
                     return BadRequest(ModelState);
                 }
 
-                await LogTraffic("POST - Create - Income - Async", "Request");
+                await LogTraffic("POST - Create - Account - Async", "Request");
 
                 await _service.AddAsync(dto);
 
-                await LogTraffic("POST - Create - Income - Async", "Response");
+                await LogTraffic("POST - Create - Account - Async", "Response");
 
-                _logger.LogInformation("Income created with id {IncomeId}", dto.Id);
+                _logger.LogInformation("Account created with id {AccountId}", dto.Id);
 
                 return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating income: {@IncomeDto}", dto);
+                _logger.LogError(ex, "Error creating account: {@AccountDto}", dto);
                 return StatusCode(500, "Error processing request");
             }
         }
 
         [HttpPut("{id:long}")]
-        public async Task<IActionResult> Update(long id, [FromBody] IncomeDto dto)
+        public async Task<IActionResult> Update(long id, [FromBody] AccountDto dto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
-                    _logger.LogWarning("Invalid model state for income update: {@IncomeDto}", dto);
+                    _logger.LogWarning("Invalid model state for account update: {@AccountDto}", dto);
                     return BadRequest(ModelState);
                 }
 
                 if (id != dto.Id)
                 {
-                    _logger.LogWarning("Income ID mismatch: route id = {RouteId}, dto id = {DtoId}", id, dto.Id);
+                    _logger.LogWarning("Account ID mismatch: route id = {RouteId}, dto id = {DtoId}", id, dto.Id);
                     return BadRequest("ID mismatch");
                 }
 
-                await LogTraffic("PUT - Update - Income - Async", "Request");
+                await LogTraffic("PUT - Update - Account - Async", "Request");
 
-                var existingIncome = await _service.GetByIdAsync(id);
-                if (existingIncome is null)
+                var existingAccount = await _service.GetByIdAsync(id);
+                if (existingAccount is null)
                 {
-                    _logger.LogWarning("Income with id {IncomeId} not found for update", id);
+                    _logger.LogWarning("Account with id {AccountId} not found for update", id);
                     return NotFound();
                 }
 
                 await _service.UpdateAsync(dto);
 
-                await LogTraffic("PUT - Update - Income - Async", "Response");
+                await LogTraffic("PUT - Update - Account - Async", "Response");
 
-                _logger.LogInformation("Income with id {IncomeId} updated successfully", id);
+                _logger.LogInformation("Account with id {AccountId} updated successfully", id);
 
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating income with id {IncomeId}", id);
+                _logger.LogError(ex, "Error updating account with id {AccountId}", id);
                 return StatusCode(500, "Error processing request");
             }
         }
@@ -141,53 +141,53 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("DELETE - Delete - Income - Async", "Request");
+                await LogTraffic("DELETE - Delete - Account - Async", "Request");
 
-                var existingIncome = await _service.GetByIdAsync(id);
-                if (existingIncome is null)
+                var existingAccount = await _service.GetByIdAsync(id);
+                if (existingAccount is null)
                 {
-                    _logger.LogWarning("Income with id {IncomeId} not found for deletion", id);
+                    _logger.LogWarning("Account with id {AccountId} not found for deletion", id);
                     return NotFound();
                 }
 
-                await _service.DeleteAsync(existingIncome);
+                await _service.DeleteAsync(existingAccount);
 
-                await LogTraffic("DELETE - Delete - Income - Async", "Response");
+                await LogTraffic("DELETE - Delete - Account - Async", "Response");
 
-                _logger.LogInformation("Income with id {IncomeId} deleted successfully", id);
+                _logger.LogInformation("Account with id {AccountId} deleted successfully", id);
 
                 return NoContent();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting income with id {IncomeId}", id);
-                return StatusCode(500, "Error processing request");
-            }
-        }
-
-        [HttpGet("ordered")]
-        public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
-        {
-            try
-            {
-                await LogTraffic("GET - GetAllOrdered - Expense - Async", "Request");
-
-                var result = await _service.GetAllOrderedAsync(orderBy, direction);
-
-                await LogTraffic("GET - GetAllOrdered - Expense - Async", "Response");
-
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error ordering expenses by {OrderBy} {Direction}", orderBy, direction);
+                _logger.LogError(ex, "Error deleting account with id {AccountId}", id);
                 return StatusCode(500, "Error processing request");
             }
         }
 
         #endregion
 
-        #region Additional Methods  
+        #region Additional Methods
+
+        [HttpGet("ordered")]
+        public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
+        {
+            try
+            {
+                await LogTraffic("GET - GetAllOrdered - Account - Async", "Request");
+
+                var result = await _service.GetAllOrderedAsync(orderBy, direction);
+
+                await LogTraffic("GET - GetAllOrdered - Account - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ordering account by {OrderBy} {Direction}", orderBy, direction);
+                return StatusCode(500, "Error processing request");
+            }
+        }
 
         #endregion
 
