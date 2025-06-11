@@ -9,10 +9,12 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
     public class ExpenseControllerSync : ControllerBase
     {
         private readonly IExpenseAppService _service;
+        private readonly ITrafficAppService _serviceTraffic;
 
-        public ExpenseControllerSync(IExpenseAppService service)
+        public ExpenseControllerSync(IExpenseAppService service, ITrafficAppService serviceTraffic)
         {
             _service = service;
+            _serviceTraffic = serviceTraffic;
         }
 
         #region CRUD Operations
@@ -34,7 +36,17 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpPost]
         public IActionResult Create([FromBody] ExpenseDto dto)
         {
+            //Log the request traffic
+            TrafficDto trafficDto = new TrafficDto("POST - Create - Expense - Sync", "Request");
+            _serviceTraffic.AddSync(trafficDto);
+
+            //Add the expense
             _service.AddSync(dto);
+
+            //Log the response traffic
+            TrafficDto trafficDto = new TrafficDto("POST - Create - Expense - Sync", "Response");
+            _serviceTraffic.AddSync(trafficDto);
+
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
