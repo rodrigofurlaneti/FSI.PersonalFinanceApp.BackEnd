@@ -15,6 +15,8 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             _service = service;
         }
 
+        #region CRUD Operations
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -52,5 +54,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             await _service.DeleteAsync(incomeCategoryDtoExisting);
             return NoContent();
         }
+
+        #endregion
+
+        #region Additional Methods
+        // Add any additional methods specific to income categories here, if needed.
+        #endregion
     }
 }

@@ -24,6 +24,7 @@ namespace FSI.PersonalFinanceApp.Domain.Interfaces
 
         //Delete
         Task DeleteAsync(T entity);
+        void DeleteSync(T entity);
 
         #endregion
     }

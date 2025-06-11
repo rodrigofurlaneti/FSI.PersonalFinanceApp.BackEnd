@@ -12,6 +12,7 @@ namespace FSI.PersonalFinanceApp.Api.DependencyInjection
             services.AddScoped<IExpenseCategoryAppService, ExpenseCategoryAppService>();
             services.AddScoped<IIncomeAppService, IncomeAppService>();
             services.AddScoped<IIncomeCategoryAppService, IncomeCategoryAppService>();
+            services.AddScoped<ITrafficAppService, TrafficAppService>();
             services.AddScoped<ITransactionAppService, TransactionAppService>();
             services.AddScoped<IUserAppService, UserAppService>();
         }

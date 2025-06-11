@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
-    [Route("api/financial-goals/sync")]
-    public class FinancialGoalControllerSync : ControllerBase
+    [Route("api/traffic/sync")]
+    public class TrafficControllerSync : ControllerBase
     {
-        private readonly IFinancialGoalAppService _service;
-
-        public FinancialGoalControllerSync(IFinancialGoalAppService service)
+        private readonly ITrafficAppService _service;
+        
+        public TrafficControllerSync(ITrafficAppService service)
         {
             _service = service;
         }
@@ -32,14 +32,14 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] FinancialGoalDto dto)
+        public IActionResult Create([FromBody] TrafficDto dto)
         {
             _service.AddSync(dto);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         [HttpPut("{id:long}")]
-        public IActionResult Update(long id, [FromBody] FinancialGoalDto dto)
+        public IActionResult Update(long id, [FromBody] TrafficDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch");
             _service.UpdateSync(dto);
@@ -49,16 +49,12 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpDelete("{id:long}")]
         public IActionResult Delete(long id)
         {
-            var expenseDtoExisting = _service.GetByIdSync(id);
-            if (expenseDtoExisting is null) return NotFound();
-            _service.DeleteSync(expenseDtoExisting);
+            var trafficDtoExisting = _service.GetByIdSync(id);
+            if (trafficDtoExisting is null) return NotFound();
+            _service.DeleteSync(trafficDtoExisting);
             return NoContent();
         }
 
-        #endregion
-
-        #region Additional Methods
-        // Add any additional methods specific to financial goals here, if needed.
         #endregion
     }
 }

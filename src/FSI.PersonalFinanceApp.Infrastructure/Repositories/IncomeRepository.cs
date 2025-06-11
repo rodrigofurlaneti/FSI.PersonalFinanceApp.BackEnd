@@ -151,5 +151,14 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure
             );
         }
+
+        public void DeleteSync(IncomeEntity entity)
+        {
+            using var connection = CreateConnection();
+            connection.Execute("usp_Income_Delete", new
+            {
+                entity.Id
+            }, commandType: CommandType.StoredProcedure);
+        }
     }
 }

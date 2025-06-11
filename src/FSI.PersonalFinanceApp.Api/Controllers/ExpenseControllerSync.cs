@@ -15,6 +15,8 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             _service = service;
         }
 
+        #region CRUD Operations
+
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -43,6 +45,111 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             _service.UpdateSync(dto);
             return NoContent();
         }
+
+        [HttpDelete("{id:long}")]
+        public IActionResult Delete(long id)
+        {
+            var expenseDtoExisting = _service.GetByIdSync(id);
+            if (expenseDtoExisting is null) return NotFound();
+            _service.DeleteSync(expenseDtoExisting);
+            return NoContent();
+        }
+
+        #endregion
+
+        #region Additional Methods  
+
+        //Name
+        [HttpGet("GetAllOrderByNameAsc")]
+        public IActionResult GetAllOrderByNameAsc()
+        {
+            var result = _service.GetAll_Orderby_Name_Asc_Sync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByNameDesc")]
+        public IActionResult GetAllOrderByNameDesc()
+        {
+            var result = _service.GetAll_Orderby_Name_Desc_Sync();
+            return Ok(result);
+        }
+
+        //Description
+        [HttpGet("GetAllOrderByDescriptionAsc")]
+        public IActionResult GetAllOrderByDescriptionAsc()
+        {
+            var result = _service.GetAll_Orderby_Description_Asc_Sync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByDescriptionDesc")]
+        public IActionResult GetAllOrderByDescriptionDesc()
+        {
+            var result = _service.GetAll_Orderby_Description_Desc_Sync();
+            return Ok(result);
+        }
+
+        //DueDate
+        [HttpGet("GetAllOrderByDueDateAsc")]
+        public IActionResult GetAllOrderByDueDateAsc()
+        {
+            var result = _service.GetAll_Orderby_DueDate_Asc_Sync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByDueDateDesc")]
+        public IActionResult GetAllOrderByDueDateDesc()
+        {
+            var result = _service.GetAll_Orderby_DueDate_Desc_Sync();
+            return Ok(result);
+        }
+
+        //PaidAt
+        [HttpGet("GetAllOrderByPaidAtAsc")]
+        public IActionResult GetAllOrderByPaidAtAsc()
+        {
+            var result = _service.GetAll_Orderby_PaidAt_Asc_Sync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByPaidAtDesc")]
+        public IActionResult GetAllOrderByPaidAtDesc()
+        {
+            var result = _service.GetAll_Orderby_PaidAt_Desc_Sync();
+            return Ok(result);
+        }
+
+        //Amount
+        [HttpGet("GetAllOrderByAmountAsc")]
+        public IActionResult GetAllOrderByAmountAsc()
+        {
+            var result = _service.GetAll_Orderby_Amount_Asc_Sync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByAmountDesc")]
+        public IActionResult GetAllOrderByAmountDesc()
+        {
+            var result = _service.GetAll_Orderby_Amount_Desc_Sync();
+            return Ok(result);
+        }
+
+        //ExpenseCategoryId
+        [HttpGet("GetAllOrderByExpenseCategoryIdAsc")]
+        public IActionResult GetAllOrderByExpenseCategoryIdAsc()
+        {
+            var result = _service.GetAll_Orderby_Amount_Asc_Sync();
+            return Ok(result);
+        }
+
+        [HttpGet("GetAllOrderByExpenseCategoryIdDesc")]
+        public IActionResult GetAllOrderByExpenseCategoryIdDesc()
+        {
+            var result = _service.GetAll_Orderby_ExpenseCategoryId_Desc_Sync();
+            return Ok(result);
+        }
+
+        #endregion
     }
 
 }

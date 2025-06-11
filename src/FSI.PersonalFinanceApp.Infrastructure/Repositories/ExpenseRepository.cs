@@ -3,6 +3,7 @@ using FSI.PersonalFinanceApp.Domain.Entities;
 using FSI.PersonalFinanceApp.Domain.Interfaces;
 using FSI.PersonalFinanceApp.Infrastructure.Context;
 using System.Data;
+using static Dapper.SqlMapper;
 
 namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
 {
@@ -119,11 +120,20 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             }, commandType: CommandType.StoredProcedure);
         }
 
+        public void DeleteSync(ExpenseEntity entity)
+        {
+            using var connection = CreateConnection();
+            connection.Execute("usp_Expense_Delete", new
+            {
+                entity.Id
+            }, commandType: CommandType.StoredProcedure);
+        }
+
         #endregion
 
         #region Methods for ordering expenses
 
-        //Description
+        //Description Async
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Description_Asc_Async()
         {
             using var connection = CreateConnection();
@@ -136,7 +146,20 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Description_Desc", commandType: CommandType.StoredProcedure);
         }
 
-        //Name
+        //Description Sync
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_Description_Asc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Description_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_Description_Desc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Description_Desc", commandType: CommandType.StoredProcedure);
+        }
+
+        //Name Async
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Name_Asc_Async()
         {
             using var connection = CreateConnection();
@@ -149,7 +172,20 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Name_Desc", commandType: CommandType.StoredProcedure);
         }
 
-        //DueDate
+        //Name Sync
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_Name_Asc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Name_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_Name_Desc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Name_Desc", commandType: CommandType.StoredProcedure);
+        }
+
+        //DueDate Async
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_DueDate_Asc_Async()
         {
             using var connection = CreateConnection();
@@ -162,7 +198,20 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_DueDate_Desc", commandType: CommandType.StoredProcedure);
         }
 
-        //PaidAt
+        //DueDate Sync
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_DueDate_Asc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_DueDate_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_DueDate_Desc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_DueDate_Desc", commandType: CommandType.StoredProcedure);
+        }
+
+        //PaidAt Async
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_PaidAt_Asc_Async()
         {
             using var connection = CreateConnection();
@@ -175,7 +224,20 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_PaidAt_Desc", commandType: CommandType.StoredProcedure);
         }
 
-        //Amount
+        //PaidAt Sync
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_PaidAt_Asc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_PaidAt_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_PaidAt_Desc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_PaidAt_Desc", commandType: CommandType.StoredProcedure);
+        }
+
+        //Amount Async
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_Amount_Asc_Async()
         {
             using var connection = CreateConnection();
@@ -188,7 +250,20 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Amount_Desc", commandType: CommandType.StoredProcedure);
         }
 
-        //ExpenseCategoryId
+        //Amount Sync
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_Amount_Asc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Amount_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_Amount_Desc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_Amount_Desc", commandType: CommandType.StoredProcedure);
+        }
+
+        //ExpenseCategoryId Async
         public async Task<IEnumerable<ExpenseEntity>> GetAll_Orderby_ExpenseCategoryId_Asc_Async()
         {
             using var connection = CreateConnection();
@@ -199,6 +274,19 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         {
             using var connection = CreateConnection();
             return await connection.QueryAsync<ExpenseEntity>("usp_Expense_GetAll_OrderBy_ExpenseCategoryId_Desc", commandType: CommandType.StoredProcedure);
+        }
+
+        //ExpenseCategoryId Sync
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_ExpenseCategoryId_Asc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_ExpenseCategoryId_Asc", commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAll_Orderby_ExpenseCategoryId_Desc_Sync()
+        {
+            using var connection = CreateConnection();
+            return connection.Query<ExpenseEntity>("usp_Expense_GetAll_OrderBy_ExpenseCategoryId_Desc", commandType: CommandType.StoredProcedure);
         }
 
         #endregion

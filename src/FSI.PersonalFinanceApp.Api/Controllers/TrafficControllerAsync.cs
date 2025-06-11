@@ -5,12 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
-    [Route("api/transactions/async")]
-    public class TransactionControllerAsync : ControllerBase
+    [Route("api/traffics/async")]
+    public class TrafficControllerAsync : ControllerBase
     {
-        private readonly ITransactionAppService _service;
+        private readonly ITrafficAppService _service;
 
-        public TransactionControllerAsync(ITransactionAppService service)
+        public TrafficControllerAsync(ITrafficAppService service)
         {
             _service = service;
         }
@@ -32,14 +32,14 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] TransactionDto dto)
+        public async Task<IActionResult> Create([FromBody] TrafficDto dto)
         {
             await _service.AddAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         [HttpPut("{id:long}")]
-        public async Task<IActionResult> Update(long id, [FromBody] TransactionDto dto)
+        public async Task<IActionResult> Update(long id, [FromBody] TrafficDto dto)
         {
             if (id != dto.Id) return BadRequest("ID mismatch");
             await _service.UpdateAsync(dto);
@@ -49,12 +49,12 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {
-            var transactionDtoExisting = await _service.GetByIdAsync(id);
-            if (transactionDtoExisting is null) return NotFound();
-            await _service.DeleteAsync(transactionDtoExisting);
+            var trafficDtoExisting = await _service.GetByIdAsync(id);
+            if (trafficDtoExisting is null) return NotFound();
+            await _service.DeleteAsync(trafficDtoExisting);
             return NoContent();
         }
 
-        #endregion  
+        #endregion
     }
 }

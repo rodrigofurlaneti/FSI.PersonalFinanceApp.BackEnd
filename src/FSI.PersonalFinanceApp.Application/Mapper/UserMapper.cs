@@ -14,8 +14,8 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
                 Email = dto.Email,
                 PasswordHash = dto.PasswordHash,
                 IsActive = dto.IsActive,
-                CreatedAt = dto.CreatedAt ?? DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = dto.CreatedAt ?? DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
         }
 

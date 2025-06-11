@@ -16,8 +16,8 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
                 Description = dto.Description,
                 ReceivedAt = dto.ReceivedAt,
                 IncomeCategoryId = dto.IncomeCategoryId,
-                CreatedAt = dto.CreatedAt ?? DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
+                CreatedAt = dto.CreatedAt ?? DateTime.Now,
+                UpdatedAt = DateTime.Now,
                 IsActive = dto.IsActive
             };
         }

@@ -17,8 +17,8 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
                 Description = dto.Description,
                 IsCompleted = dto.IsCompleted,
                 IsActive = dto.IsActive,
-                CreatedAt = dto.CreatedAt ?? DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                CreatedAt = dto.CreatedAt ?? DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
         }
 

@@ -15,6 +15,8 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             _service = service;
         }
 
+        #region CRUD Operations
+
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -43,5 +45,15 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             _service.UpdateSync(dto);
             return NoContent();
         }
+
+        [HttpDelete("{id:long}")]
+        public IActionResult Delete(long id)
+        {
+            var expenseDtoExisting = _service.GetByIdSync(id);
+            if (expenseDtoExisting is null) return NotFound();
+            _service.DeleteSync(expenseDtoExisting);
+            return NoContent();
+        }
+        #endregion
     }
 }

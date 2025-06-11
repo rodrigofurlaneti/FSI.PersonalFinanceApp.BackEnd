@@ -67,6 +67,12 @@ namespace FSI.PersonalFinanceApp.Application.Services
             var entity = ExpenseCategoryMapper.ToEntity(dto);
             await _repository.DeleteAsync(entity);
         }
+        public void DeleteSync(ExpenseCategoryDto dto)
+        {
+            var entity = ExpenseCategoryMapper.ToEntity(dto);
+            _repository.DeleteSync(entity);
+        }
+
     }
 
 }

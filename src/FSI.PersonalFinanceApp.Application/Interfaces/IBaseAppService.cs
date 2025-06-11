@@ -22,6 +22,7 @@
 
         // Delete
         Task DeleteAsync(TDto dto); 
+        void DeleteSync(TDto dto);
 
         #endregion
     }
