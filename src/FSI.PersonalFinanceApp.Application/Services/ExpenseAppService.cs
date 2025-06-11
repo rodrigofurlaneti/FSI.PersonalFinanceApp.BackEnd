@@ -77,10 +77,6 @@ namespace FSI.PersonalFinanceApp.Application.Services
             _repository.DeleteSync(entity);
         }
 
-        #endregion
-
-        #region Additional Methods
-
         public async Task<IEnumerable<ExpenseDto>> GetAllOrderedAsync(string orderBy, string direction)
         {
             var entities = await _repository.GetAllOrderedAsync(orderBy, direction);
@@ -92,6 +88,10 @@ namespace FSI.PersonalFinanceApp.Application.Services
             var entities = _repository.GetAllOrderedSync(orderBy, direction);
             return entities.Select(ExpenseMapper.ToDto);
         }
+
+        #endregion
+
+        #region Additional Methods
 
         #endregion
     }

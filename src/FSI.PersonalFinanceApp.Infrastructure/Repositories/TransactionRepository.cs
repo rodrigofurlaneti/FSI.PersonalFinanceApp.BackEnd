@@ -170,5 +170,56 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 entity.Id
             }, commandType: CommandType.StoredProcedure);
         }
+
+        #region Methods for ordering expenses
+
+        public async Task<IEnumerable<TransactionEntity>> GetAllOrderedAsync(string orderBy, string direction)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(orderBy))
+                throw new ArgumentException("Invalid orderBy field");
+
+            var isDesc = direction.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            var procedureName = GetProcedureName(orderBy, direction);
+
+            return await connection.QueryAsync<TransactionEntity>(procedureName, commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<TransactionEntity> GetAllOrderedSync(string orderBy, string direction)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(orderBy))
+                throw new ArgumentException("Invalid orderBy field");
+
+            var isDesc = direction.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            var procedureName = GetProcedureName(orderBy, direction);
+
+            return connection.Query<TransactionEntity>(procedureName, commandType: CommandType.StoredProcedure);
+        }
+
+        #endregion
+
+        #region Additional Methods Private
+
+        private string GetProcedureName(string orderBy, string direction)
+        {
+            if (!_orderMap.ContainsKey(orderBy))
+                throw new ArgumentException("Invalid orderBy field");
+
+            var isDesc = direction.Equals("desc", StringComparison.OrdinalIgnoreCase);
+            return $"usp_Transaction_GetAll_OrderBy_{_orderMap[orderBy]}_{(isDesc ? "Desc" : "Asc")}";
+        }
+
+        private static readonly Dictionary<string, string> _orderMap = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Name", "Name" }
+        };
+
+        #endregion
+
     }
 }

@@ -118,5 +118,55 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         }
 
         #endregion
+
+        #region Methods for ordering expenses
+
+        public async Task<IEnumerable<TrafficEntity>> GetAllOrderedAsync(string orderBy, string direction)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(orderBy))
+                throw new ArgumentException("Invalid orderBy field");
+
+            var isDesc = direction.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            var procedureName = GetProcedureName(orderBy, direction);
+
+            return await connection.QueryAsync<TrafficEntity>(procedureName, commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<TrafficEntity> GetAllOrderedSync(string orderBy, string direction)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(orderBy))
+                throw new ArgumentException("Invalid orderBy field");
+
+            var isDesc = direction.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+            var procedureName = GetProcedureName(orderBy, direction);
+
+            return connection.Query<TrafficEntity>(procedureName, commandType: CommandType.StoredProcedure);
+        }
+
+        #endregion
+
+        #region Additional Methods Private
+
+        private string GetProcedureName(string orderBy, string direction)
+        {
+            if (!_orderMap.ContainsKey(orderBy))
+                throw new ArgumentException("Invalid orderBy field");
+
+            var isDesc = direction.Equals("desc", StringComparison.OrdinalIgnoreCase);
+            return $"usp_Traffic_GetAll_OrderBy_{_orderMap[orderBy]}_{(isDesc ? "Desc" : "Asc")}";
+        }
+
+        private static readonly Dictionary<string, string> _orderMap = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Name", "Name" }
+        };
+
+        #endregion
     }
 }

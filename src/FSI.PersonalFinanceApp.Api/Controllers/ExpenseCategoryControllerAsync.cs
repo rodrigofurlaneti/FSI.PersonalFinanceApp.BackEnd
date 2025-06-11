@@ -9,10 +9,14 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
     public class ExpenseCategoryControllerAsync : ControllerBase
     {
         private readonly IExpenseCategoryAppService _service;
+        private readonly ITrafficAppService _serviceTraffic;
+        private readonly ILogger<ExpenseCategoryControllerAsync> _logger;
 
-        public ExpenseCategoryControllerAsync(IExpenseCategoryAppService service)
+        public ExpenseCategoryControllerAsync(IExpenseCategoryAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseCategoryControllerAsync> logger)
         {
             _service = service;
+            _serviceTraffic = serviceTraffic;
+            _logger = logger;
         }
 
         #region CRUD Operations
@@ -20,39 +24,179 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _service.GetAllAsync();
-            return Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetAll - ExpenseCategory - Async", "Request");
+
+                var result = await _service.GetAllAsync();
+
+                await LogTraffic("GET - GetAll - ExpenseCategory - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error getting expenses categories");
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpGet("{id:long}")]
         public async Task<IActionResult> GetById(long id)
         {
-            var result = await _service.GetByIdAsync(id);
-            return result is null ? NotFound() : Ok(result);
+            try
+            {
+                await LogTraffic("GET - GetById - ExpenseCategory - Async", "Request");
+
+                var result = await _service.GetByIdAsync(id);
+
+                await LogTraffic("GET - GetById - ExpenseCategory - Async", "Response");
+
+                if (result is null)
+                {
+                    _logger.LogWarning("Expense with id {ExpenseCategoryId} not found", id);
+                    return NotFound();
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving expense category with id {ExpenseCategoryId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ExpenseCategoryDto dto)
         {
-            await _service.AddAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for expense creation: {@ExpenseDto}", dto);
+                    return BadRequest(ModelState);
+                }
+
+                await LogTraffic("POST - Create - ExpenseCategory - Async", "Request");
+
+                await _service.AddAsync(dto);
+
+                await LogTraffic("POST - Create - ExpenseCategory - Async", "Response");
+
+                _logger.LogInformation("Expense category created with id {ExpenseCategoryId}", dto.Id);
+
+                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating expense category: {@ExpenseCategoryDto}", dto);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpPut("{id:long}")]
         public async Task<IActionResult> Update(long id, [FromBody] ExpenseCategoryDto dto)
         {
-            if (id != dto.Id) return BadRequest("ID mismatch");
-            await _service.UpdateAsync(dto);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for expense category update: {@ExpenseCategoryDto}", dto);
+                    return BadRequest(ModelState);
+                }
+
+                if (id != dto.Id)
+                {
+                    _logger.LogWarning("Expense ID mismatch: route id = {RouteId}, dto id = {DtoId}", id, dto.Id);
+                    return BadRequest("ID mismatch");
+                }
+
+                await LogTraffic("PUT - Update - ExpenseCategory - Async", "Request");
+
+                var existingExpenseCategory = await _service.GetByIdAsync(id);
+                if (existingExpenseCategory is null)
+                {
+                    _logger.LogWarning("Expense category with id {ExpenseCategoryId} not found for update", id);
+                    return NotFound();
+                }
+
+                await _service.UpdateAsync(dto);
+
+                await LogTraffic("PUT - Update - ExpenseCategory - Async", "Response");
+
+                _logger.LogInformation("Expense category with id {ExpenseCategoryId} updated successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating expense category with id {ExpenseCategoryId}", id);
+                return StatusCode(500, "Error processing request");
+            }
         }
 
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> Delete(long id)
         {
-            var expenseCategoryDtoExisting = await _service.GetByIdAsync(id);
-            if (expenseCategoryDtoExisting is null) return NotFound();
-            await _service.DeleteAsync(expenseCategoryDtoExisting);
-            return NoContent();
+            try
+            {
+                await LogTraffic("DELETE - Delete - ExpenseCategory - Async", "Request");
+
+                var existingExpenseCategory = await _service.GetByIdAsync(id);
+                if (existingExpenseCategory is null)
+                {
+                    _logger.LogWarning("Expense category with id {ExpenseCategoryId} not found for deletion", id);
+                    return NotFound();
+                }
+
+                await _service.DeleteAsync(existingExpenseCategory);
+
+                await LogTraffic("DELETE - Delete - ExpenseCategory - Async", "Response");
+
+                _logger.LogInformation("Expense category with id {ExpenseCategoryId} deleted successfully", id);
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting expense category with id {ExpenseCategoryId}", id);
+                return StatusCode(500, "Error processing request");
+            }
+        }
+
+        #endregion
+
+        #region Additional Methods
+
+        [HttpGet("ordered")]
+        public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
+        {
+            try
+            {
+                await LogTraffic("GET - GetAllOrdered - ExpenseCategory - Async", "Request");
+
+                var result = await _service.GetAllOrderedAsync(orderBy, direction);
+
+                await LogTraffic("GET - GetAllOrdered - ExpenseCategory - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ordering expenses categories by {OrderBy} {Direction}", orderBy, direction);
+                return StatusCode(500, "Error processing request");
+            }
+        }
+
+        #endregion
+
+        #region Additional Methods Private 
+
+        private async Task LogTraffic(string method, string action)
+        {
+            var dto = new TrafficDto(method, action, DateTime.Now);
+            await _serviceTraffic.AddAsync(dto);
         }
 
         #endregion

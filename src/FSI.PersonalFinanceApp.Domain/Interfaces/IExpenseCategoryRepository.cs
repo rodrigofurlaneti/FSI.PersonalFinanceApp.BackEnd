@@ -4,5 +4,6 @@ namespace FSI.PersonalFinanceApp.Domain.Interfaces
 {
     public interface IExpenseCategoryRepository : IBaseRepository<ExpenseCategoryEntity>
     {
+
     }
 }

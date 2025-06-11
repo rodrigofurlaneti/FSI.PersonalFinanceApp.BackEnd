@@ -1,4 +1,6 @@
-﻿namespace FSI.PersonalFinanceApp.Application.Interfaces
+﻿using FSI.PersonalFinanceApp.Application.Dtos;
+
+namespace FSI.PersonalFinanceApp.Application.Interfaces
 {
     public interface IBaseAppService<TDto>
     {
@@ -23,6 +25,10 @@
         // Delete
         Task DeleteAsync(TDto dto); 
         void DeleteSync(TDto dto);
+
+        //Ordered
+        Task<IEnumerable<TDto>> GetAllOrderedAsync(string orderBy, string direction);
+        IEnumerable<TDto> GetAllOrderedSync(string orderBy, string direction);
 
         #endregion
     }

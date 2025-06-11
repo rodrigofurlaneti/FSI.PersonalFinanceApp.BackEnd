@@ -26,6 +26,10 @@ namespace FSI.PersonalFinanceApp.Domain.Interfaces
         Task DeleteAsync(T entity);
         void DeleteSync(T entity);
 
+        // Ordered
+        Task<IEnumerable<T>> GetAllOrderedAsync(string orderBy, string direction);
+        IEnumerable<T> GetAllOrderedSync(string orderBy, string direction);
+
         #endregion
     }
 }
