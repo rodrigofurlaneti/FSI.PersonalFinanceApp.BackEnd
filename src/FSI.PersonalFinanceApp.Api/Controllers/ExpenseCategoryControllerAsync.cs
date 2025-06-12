@@ -165,9 +165,25 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
         }
 
-        #endregion
+        [HttpGet("filtered")]
+        public async Task<IActionResult> GetAllFiltered([FromQuery] string filterBy, [FromQuery] string value)
+        {
+            try
+            {
+                await LogTraffic("GET - GetAllFiltered - ExpenseCategory - Async", "Request");
 
-        #region Additional Methods
+                var result = await _service.GetAllFilteredAsync(filterBy, value);
+
+                await LogTraffic("GET - GetAllFiltered - ExpenseCategory - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error filtering expenses category by {FilterBy} ", filterBy);
+                return StatusCode(500, "Error processing request");
+            }
+        }
 
         [HttpGet("ordered")]
         public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
@@ -188,6 +204,12 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 return StatusCode(500, "Error processing request");
             }
         }
+
+        #endregion
+
+        #region Additional Methods
+
+
 
         #endregion
 

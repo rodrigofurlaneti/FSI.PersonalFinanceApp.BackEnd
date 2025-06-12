@@ -165,6 +165,26 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
         }
 
+        [HttpGet("filtered")]
+        public async Task<IActionResult> GetAllFiltered([FromQuery] string filterBy, [FromQuery] string value)
+        {
+            try
+            {
+                await LogTraffic("GET - GetAllFiltered - IncomeCategory - Async", "Request");
+
+                var result = await _service.GetAllFilteredAsync(filterBy, value);
+
+                await LogTraffic("GET - GetAllFiltered - IncomeCategory - Async", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error filtering income category by {FilterBy} ", filterBy);
+                return StatusCode(500, "Error processing request");
+            }
+        }
+
         [HttpGet("ordered")]
         public async Task<IActionResult> GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
         {

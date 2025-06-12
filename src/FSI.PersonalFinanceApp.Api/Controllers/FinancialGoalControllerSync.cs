@@ -165,6 +165,26 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
         }
 
+        [HttpGet("filtered")]
+        public IActionResult GetAllFiltered([FromQuery] string filterBy, [FromQuery] string value)
+        {
+            try
+            {
+                LogTraffic("GET - GetAllFiltered - FinancialGoal - Sync", "Request");
+
+                var result = _service.GetAllFilteredSync(filterBy, value);
+
+                LogTraffic("GET - GetAllFiltered - FinancialGoal - Sync", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error filtering financial goal by {FilterBy} ", filterBy);
+                return StatusCode(500, "Error processing request");
+            }
+        }
+
         [HttpGet("ordered")]
         public IActionResult GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
         {

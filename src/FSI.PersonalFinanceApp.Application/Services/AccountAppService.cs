@@ -73,7 +73,19 @@ namespace FSI.PersonalFinanceApp.Application.Services
             var entity = AccountMapper.ToEntity(dto);
             _repository.DeleteSync(entity);
         }
-        
+
+        public async Task<IEnumerable<AccountDto>> GetAllFilteredAsync(string filterBy, string value)
+        {
+            var entities = await _repository.GetAllFilteredAsync(filterBy, value);
+            return entities.Select(AccountMapper.ToDto);
+        }
+
+        public IEnumerable<AccountDto> GetAllFilteredSync(string filterBy, string value)
+        {
+            var entities = _repository.GetAllFilteredSync(filterBy, value);
+            return entities.Select(AccountMapper.ToDto);
+        }
+
         public async Task<IEnumerable<AccountDto>> GetAllOrderedAsync(string orderBy, string direction)
         {
             var entities = await _repository.GetAllOrderedAsync(orderBy, direction);

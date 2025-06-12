@@ -146,6 +146,46 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             }, commandType: CommandType.StoredProcedure);
         }
 
+        #region Methods for filtering user
+
+        public async Task<IEnumerable<UserEntity>> GetAllFilteredAsync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, value);
+
+            return await connection.QueryAsync<UserEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<UserEntity> GetAllFilteredSync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, value);
+
+            return connection.Query<UserEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        #endregion
+
         public async Task<IEnumerable<UserEntity>> GetAllOrderedAsync(string orderBy, string direction)
         {
             using var connection = CreateConnection();
@@ -172,6 +212,14 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             var procedureName = GetProcedureName(orderBy, direction);
 
             return connection.Query<UserEntity>(procedureName, commandType: CommandType.StoredProcedure);
+        }
+
+        private string GetFilteredProcedureName(string filterBy)
+        {
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filterBy field");
+
+            return $"usp_User_GetAll_FilterBy_{_orderMap[filterBy]}";
         }
 
         private string GetProcedureName(string orderBy, string direction)

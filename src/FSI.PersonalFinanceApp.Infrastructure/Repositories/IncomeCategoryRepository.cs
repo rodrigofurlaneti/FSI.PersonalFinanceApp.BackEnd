@@ -136,6 +136,46 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             }, commandType: CommandType.StoredProcedure);
         }
 
+        #region Methods for filtering income category
+
+        public async Task<IEnumerable<IncomeCategoryEntity>> GetAllFilteredAsync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, value);
+
+            return await connection.QueryAsync<IncomeCategoryEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<IncomeCategoryEntity> GetAllFilteredSync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, value);
+
+            return connection.Query<IncomeCategoryEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        #endregion
+
         #region Methods for ordering expenses
 
         public async Task<IEnumerable<IncomeCategoryEntity>> GetAllOrderedAsync(string orderBy, string direction)
@@ -169,6 +209,14 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         #endregion
 
         #region Additional Methods Private
+
+        private string GetFilteredProcedureName(string filterBy)
+        {
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            return $"usp_IncomeCategory_GetAll_FilterBy_{_orderMap[filterBy]}";
+        }
 
         private string GetProcedureName(string orderBy, string direction)
         {

@@ -73,6 +73,18 @@ namespace FSI.PersonalFinanceApp.Application.Services
             _repository.DeleteSync(entity);
         }
 
+        public async Task<IEnumerable<ExpenseCategoryDto>> GetAllFilteredAsync(string filterBy, string value)
+        {
+            var entities = await _repository.GetAllFilteredAsync(filterBy, value);
+            return entities.Select(ExpenseCategoryMapper.ToDto);
+        }
+
+        public IEnumerable<ExpenseCategoryDto> GetAllFilteredSync(string filterBy, string value)
+        {
+            var entities = _repository.GetAllFilteredSync(filterBy, value);
+            return entities.Select(ExpenseCategoryMapper.ToDto);
+        }
+
         public async Task<IEnumerable<ExpenseCategoryDto>> GetAllOrderedAsync(string orderBy, string direction)
         {
             var entities = await _repository.GetAllOrderedAsync(orderBy, direction);

@@ -165,9 +165,25 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
         }
 
-        #endregion
+        [HttpGet("filtered")]
+        public IActionResult GetAllFiltered([FromQuery] string filterBy, [FromQuery] string value)
+        {
+            try
+            {
+                LogTraffic("GET - GetAllFiltered - Expense - Sync", "Request");
 
-        #region Additional Methods  
+                var result = _service.GetAllFilteredSync(filterBy, value);
+
+                LogTraffic("GET - GetAllFiltered - Expense - Sync", "Response");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error filtering expense by {FilterBy} ", filterBy);
+                return StatusCode(500, "Error processing request");
+            }
+        }
 
         [HttpGet("ordered")]
         public IActionResult GetAllOrdered([FromQuery] string orderBy, [FromQuery] string direction = "asc")
@@ -188,6 +204,10 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 return StatusCode(500, "Error processing request");
             }
         }
+
+        #endregion
+
+        #region Additional Methods  
 
         #endregion
 

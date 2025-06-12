@@ -131,6 +131,72 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
 
         #endregion
 
+        #region Methods for filtering expenses
+
+        public async Task<IEnumerable<ExpenseEntity>> GetAllFilteredAsync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filterBy field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var expectedType = _filterTypes[filterBy];
+
+            object typedValue;
+
+            try
+            {
+                typedValue = Convert.ChangeType(value, expectedType, System.Globalization.CultureInfo.InvariantCulture);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Invalid value for {filterBy}. Expected type: {expectedType.Name}", ex);
+            }
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, typedValue);
+
+            return await connection.QueryAsync<ExpenseEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<ExpenseEntity> GetAllFilteredSync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filterBy field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var expectedType = _filterTypes[filterBy];
+
+            object typedValue;
+
+            try
+            {
+                typedValue = Convert.ChangeType(value, expectedType, System.Globalization.CultureInfo.InvariantCulture);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Invalid value for {filterBy}. Expected type: {expectedType.Name}", ex);
+            }
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, typedValue);
+
+            return connection.Query<ExpenseEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        #endregion
+
         #region Methods for ordering expenses
 
         public async Task<IEnumerable<ExpenseEntity>> GetAllOrderedAsync(string orderBy, string direction)
@@ -165,6 +231,14 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
 
         #region Additional Methods Private
 
+        private string GetFilteredProcedureName(string filterBy)
+        {
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filterBy field");
+
+            return $"usp_Expense_GetAll_FilterBy_{_orderMap[filterBy]}";
+        }
+
         private string GetProcedureName(string orderBy, string direction)
         {
             if (!_orderMap.ContainsKey(orderBy))
@@ -182,6 +256,16 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             { "DueDate", "DueDate" },
             { "PaidAt", "PaidAt" },
             { "ExpenseCategoryId", "ExpenseCategoryId" }
+        };
+
+        private static readonly Dictionary<string, Type> _filterTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Name", typeof(string) },
+            { "Description", typeof(string) },
+            { "Amount", typeof(decimal) },
+            { "DueDate", typeof(DateTime) },
+            { "PaidAt", typeof(DateTime) },
+            { "ExpenseCategoryId", typeof(long) }
         };
 
         #endregion

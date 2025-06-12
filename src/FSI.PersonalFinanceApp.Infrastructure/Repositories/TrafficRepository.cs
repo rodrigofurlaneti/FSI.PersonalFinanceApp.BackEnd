@@ -119,7 +119,47 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
 
         #endregion
 
-        #region Methods for ordering expenses
+        #region Methods for filtering traffic
+
+        public async Task<IEnumerable<TrafficEntity>> GetAllFilteredAsync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, value);
+
+            return await connection.QueryAsync<TrafficEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        public IEnumerable<TrafficEntity> GetAllFilteredSync(string filterBy, string value)
+        {
+            using var connection = CreateConnection();
+
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filter by field");
+
+            var procedureName = GetFilteredProcedureName(filterBy);
+
+            var parameterName = _orderMap[filterBy];
+
+            var parameters = new DynamicParameters();
+
+            parameters.Add(parameterName, value);
+
+            return connection.Query<TrafficEntity>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        }
+
+        #endregion
+
+        #region Methods for ordering traffic
 
         public async Task<IEnumerable<TrafficEntity>> GetAllOrderedAsync(string orderBy, string direction)
         {
@@ -152,6 +192,14 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         #endregion
 
         #region Additional Methods Private
+
+        private string GetFilteredProcedureName(string filterBy)
+        {
+            if (!_orderMap.ContainsKey(filterBy))
+                throw new ArgumentException("Invalid filterBy field");
+
+            return $"usp_Traffic_GetAll_FilterBy_{_orderMap[filterBy]}";
+        }
 
         private string GetProcedureName(string orderBy, string direction)
         {

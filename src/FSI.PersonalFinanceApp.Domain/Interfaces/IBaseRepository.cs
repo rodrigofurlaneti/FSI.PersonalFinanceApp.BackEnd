@@ -30,6 +30,10 @@ namespace FSI.PersonalFinanceApp.Domain.Interfaces
         Task<IEnumerable<T>> GetAllOrderedAsync(string orderBy, string direction);
         IEnumerable<T> GetAllOrderedSync(string orderBy, string direction);
 
+        // Filtered
+        Task<IEnumerable<T>> GetAllFilteredAsync(string filterBy, string value);
+        IEnumerable<T> GetAllFilteredSync(string filterBy, string value);
+
         #endregion
     }
 }
