@@ -131,6 +131,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             }
             catch (Exception ex)
             {
+
                 _logger.LogError(ex, "Error updating expense category with id {ExpenseCategoryId}", id);
                 return StatusCode(500, "Error processing request");
             }
