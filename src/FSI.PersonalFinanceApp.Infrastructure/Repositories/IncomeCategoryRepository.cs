@@ -118,10 +118,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 "usp_IncomeCategory_Delete",
                 new
                 {
-                    entity.Id,
-                    entity.Name,
-                    entity.IsActive,
-                    entity.UpdatedAt
+                    entity.Id
                 },
                 commandType: CommandType.StoredProcedure
             );
