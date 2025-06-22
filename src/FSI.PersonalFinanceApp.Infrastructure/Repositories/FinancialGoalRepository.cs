@@ -47,11 +47,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             );
         }
 
-        public async Task AddAsync(FinancialGoalEntity entity)
+        public async Task<long> AddAsync(FinancialGoalEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                "usp_FinancialGoal_Add",
+
+            var id = await connection.ExecuteScalarAsync<long>("usp_FinancialGoal_Add",
                 new
                 {
                     entity.Name,
@@ -66,13 +66,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
-        public void AddSync(FinancialGoalEntity entity)
+        public long AddSync(FinancialGoalEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
-                "usp_FinancialGoal_Add",
+
+            var id = connection.ExecuteScalar<long>("usp_FinancialGoal_Add",
                 new
                 {
                     entity.Name,
@@ -87,6 +89,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
         public async Task UpdateAsync(FinancialGoalEntity entity)

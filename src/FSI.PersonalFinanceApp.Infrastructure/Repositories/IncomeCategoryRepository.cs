@@ -47,11 +47,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             );
         }
 
-        public async Task AddAsync(IncomeCategoryEntity entity)
+        public async Task<long> AddAsync(IncomeCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                "usp_IncomeCategory_Add",
+
+            var id = await connection.ExecuteScalarAsync<long>("usp_IncomeCategory_Add",
                 new
                 {
                     entity.Name,
@@ -61,13 +61,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
-        public void AddSync(IncomeCategoryEntity entity)
+        public long AddSync(IncomeCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
-                "usp_IncomeCategory_Add",
+
+            var id = connection.ExecuteScalar<long>("usp_IncomeCategory_Add",
                 new
                 {
                     entity.Name,
@@ -77,6 +79,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
         public async Task UpdateAsync(IncomeCategoryEntity entity)

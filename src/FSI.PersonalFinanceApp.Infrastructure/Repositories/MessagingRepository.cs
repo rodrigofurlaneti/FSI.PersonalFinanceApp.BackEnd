@@ -43,10 +43,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure);
         }
 
-        public async Task AddAsync(MessagingEntity entity)
+        public async Task<long> AddAsync(MessagingEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Messaging_Add", new
+
+            var id = await connection.ExecuteScalarAsync<long>("usp_Messaging_Add", new
             {
                 entity.Action,
                 entity.QueueName,
@@ -57,12 +58,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 entity.CreatedAt,
                 entity.UpdatedAt
             }, commandType: CommandType.StoredProcedure);
+
+            return id;
         }
 
-        public void AddSync(MessagingEntity entity)
+        public long AddSync(MessagingEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Messaging_Add", new
+
+            var id = connection.ExecuteScalar<long>("usp_Messaging_Add", new
             {
                 entity.Action,
                 entity.QueueName,
@@ -73,6 +77,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 entity.CreatedAt,
                 entity.UpdatedAt
             }, commandType: CommandType.StoredProcedure);
+
+            return id;
         }
 
         public async Task UpdateAsync(MessagingEntity entity)

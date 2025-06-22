@@ -38,16 +38,16 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entity is null ? null : IncomeMapper.ToDto(entity);
         }
 
-        public async Task AddAsync(IncomeDto dto)
+        public async Task<long> AddAsync(IncomeDto dto)
         {
             var entity = IncomeMapper.ToEntity(dto);
-            await _repository.AddAsync(entity);
+            return await _repository.AddAsync(entity);
         }
 
-        public void AddSync(IncomeDto dto)
+        public long AddSync(IncomeDto dto)
         {
             var entity = IncomeMapper.ToEntity(dto);
-            _repository.AddSync(entity);
+            return _repository.AddSync(entity);
         }
 
         public async Task UpdateAsync(IncomeDto dto)

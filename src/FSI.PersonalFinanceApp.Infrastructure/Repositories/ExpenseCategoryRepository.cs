@@ -47,10 +47,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             );
         }
 
-        public async Task AddAsync(ExpenseCategoryEntity entity)
+        public async Task<long> AddAsync(ExpenseCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var id = await connection.ExecuteScalarAsync<long>(
                 "usp_ExpenseCategory_Add",
                 new
                 {
@@ -61,12 +62,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
-        public void AddSync(ExpenseCategoryEntity entity)
+        public long AddSync(ExpenseCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
+
+            var id = connection.ExecuteScalar<long>(
                 "usp_ExpenseCategory_Add",
                 new
                 {
@@ -77,6 +81,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
         public async Task UpdateAsync(ExpenseCategoryEntity entity)

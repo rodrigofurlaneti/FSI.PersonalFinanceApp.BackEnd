@@ -21,6 +21,8 @@ namespace FSI.PersonalFinanceApp.Worker
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            string nameQueue = "expense-category-queue";
+
             var factory = new ConnectionFactory
             {
                 HostName = _config["RabbitMq:Host"] ?? "localhost",
@@ -31,7 +33,7 @@ namespace FSI.PersonalFinanceApp.Worker
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 
-            channel.QueueDeclare(queue: "expense-category-queue", durable: true, exclusive: false, autoDelete: false, arguments: null);
+            channel.QueueDeclare(queue: nameQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
 
             var consumer = new EventingBasicConsumer(channel);
             consumer.Received += async (sender, ea) =>
@@ -41,7 +43,7 @@ namespace FSI.PersonalFinanceApp.Worker
                     var body = ea.Body.ToArray();
                     var message = Encoding.UTF8.GetString(body);
 
-                    Console.WriteLine("📥 Mensagem recebida do RabbitMQ:");
+                    Console.WriteLine("📥 Message received from RabbitMQ:");
                     Console.WriteLine(message);
 
                     var envelope = JsonSerializer.Deserialize<ExpenseCategoryMessage>(
@@ -51,21 +53,26 @@ namespace FSI.PersonalFinanceApp.Worker
 
                     if (envelope == null)
                     {
-                        Console.WriteLine("❌ Envelope está nulo. Verifique o formato da mensagem.");
+                        Console.WriteLine("❌ Envelope is null. Check message format.");
                         return;
                     }
 
-                    Console.WriteLine($"✔ Ação recebida: {envelope.Action}");
+                    Console.WriteLine($"✔ Action received: {envelope.Action}");
 
                     Console.WriteLine($"✔ Payload: {JsonSerializer.Serialize(envelope.Payload)}");
 
                     using var scope = _scopeFactory.CreateScope();
+                    
                     var service = scope.ServiceProvider.GetRequiredService<IExpenseCategoryAppService>();
+                    
+                    var messagingService = scope.ServiceProvider.GetRequiredService<IMessagingAppService>();
+
+                    long? createdId = null;
 
                     switch (envelope.Action.ToLowerInvariant())
                     {
                         case "create":
-                            await service.AddAsync(envelope.Payload);
+                            createdId = await service.AddAsync(envelope.Payload); 
                             break;
                         case "update":
                             await service.UpdateAsync(envelope.Payload);
@@ -74,22 +81,28 @@ namespace FSI.PersonalFinanceApp.Worker
                             await service.DeleteAsync(envelope.Payload);
                             break;
                         default:
-                            Console.WriteLine($"⚠ Ação não reconhecida: {envelope.Action}");
+                            Console.WriteLine($"⚠ Action not recognized: {envelope.Action}");
                             break;
                     }
 
-                    // ✅ Confirmação manual de que a mensagem foi processada com sucesso
+                    // ✅ Updates the processing status of the record in the database to processed
+                    if (envelope.MessagingId > 0 && envelope.Action.Equals("create", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await UpdateProcessedMessageAsync(messagingService, envelope, nameQueue, createdId);
+                    }
+
+                    // ✅ Manual confirmation that the message was processed successfully
                     channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
                     // ❌ Não dar o Ack -> mensagem permanece na fila
                     // 🔴 Logar erro de parsing ou de serviço
-                    Console.WriteLine($"Erro ao processar mensagem: {ex.Message}");
+                    Console.WriteLine($"Error processing message: {ex.Message}");
                 }
             };
 
-            channel.BasicConsume(queue: "expense-category-queue", autoAck: false, consumer: consumer);
+            channel.BasicConsume(queue: nameQueue, autoAck: false, consumer: consumer);
 
             // 🔄 Loop para manter o serviço ativo enquanto não for cancelado
             return Task.Run(async () =>
@@ -103,6 +116,48 @@ namespace FSI.PersonalFinanceApp.Worker
                 channel.Close();
                 connection.Close();
             }, stoppingToken);
+        }
+
+        private async Task UpdateProcessedMessageAsync(IMessagingAppService messagingService,ExpenseCategoryMessage envelope,
+            string queueName,long? createdId)
+        {
+            if (createdId != null)
+            {
+                envelope.Payload.Id = createdId.Value;
+                envelope.Payload.UpdatedAt = DateTime.Now;
+
+                var updatedContent = JsonSerializer.Serialize(envelope);
+
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "Create",
+                    QueueName = queueName,
+                    MessageContent = updatedContent,
+                    IsProcessed = true,
+                    ErrorMessage = string.Empty,
+                    UpdatedAt = DateTime.Now,
+                    IsActive = true
+                });
+
+                Console.WriteLine($"✔ Message ID {envelope.MessagingId} marked as processed.");
+            }
+            else
+            {
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = envelope.Action,
+                    QueueName = queueName,
+                    MessageContent = JsonSerializer.Serialize(envelope),
+                    IsProcessed = false,
+                    ErrorMessage = "Failed to insert expense category into database.",
+                    UpdatedAt = DateTime.Now,
+                    IsActive = false
+                });
+
+                Console.WriteLine($"❌ Failed to process message ID {envelope.MessagingId}: creation returned null.");
+            }
         }
     }
 }

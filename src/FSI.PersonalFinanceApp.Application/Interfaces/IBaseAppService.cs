@@ -15,8 +15,8 @@ namespace FSI.PersonalFinanceApp.Application.Interfaces
         TDto? GetByIdSync(long id);
 
         // Add
-        Task AddAsync(TDto dto);
-        void AddSync(TDto dto);
+        Task<long> AddAsync(TDto dto);
+        long AddSync(TDto dto);
 
         // Update
         Task UpdateAsync(TDto dto);

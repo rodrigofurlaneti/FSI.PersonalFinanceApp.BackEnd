@@ -43,16 +43,16 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return entity is null ? null : IncomeCategoryMapper.ToDto(entity);
         }
 
-        public async Task AddAsync(IncomeCategoryDto dto)
+        public async Task<long> AddAsync(IncomeCategoryDto dto)
         {
             var entity = IncomeCategoryMapper.ToEntity(dto);
-            await _repository.AddAsync(entity);
+            return await _repository.AddAsync(entity);
         }
 
-        public void AddSync(IncomeCategoryDto dto)
+        public long AddSync(IncomeCategoryDto dto)
         {
             var entity = IncomeCategoryMapper.ToEntity(dto);
-            _repository.AddSync(entity);
+            return _repository.AddSync(entity);
         }
 
         public async Task UpdateAsync(IncomeCategoryDto dto)

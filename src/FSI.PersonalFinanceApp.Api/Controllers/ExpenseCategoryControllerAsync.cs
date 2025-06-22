@@ -86,29 +86,42 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await LogTraffic("POST - Create - ExpenseCategory - Async", "Request");
 
+                // Monta a mensagem (sem ainda publicar)
                 var envelope = new ExpenseCategoryMessage
                 {
                     Action = "create",
-                    Payload = dto
+                    Payload = dto,
+                    MessagingId = 0 
                 };
+
+                // Serializa o conteúdo da mensagem
+                string messageContent = JsonSerializer.Serialize(envelope);
+
+                // Salva na tabela Messaging e pega o ID
+                var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
+                    "Create",
+                    "expense-category-queue",
+                    messageContent,
+                    false,
+                    string.Empty
+                ));
+
+                // Monta a mensagem com o id
+                envelope.MessagingId = idMessaging;
 
                 // Publica no RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
-                _logger.LogInformation("Message sent to queue with CREATE action");
 
-                // Grava no banco após publicação com sucesso
-                string messageContent = JsonSerializer.Serialize(envelope);
-                MessagingDto messagingDto = new MessagingDto("Create", "expense-category-queue", messageContent, false, string.Empty);
-                await _messagingAppService.AddAsync(messagingDto);
+                _logger.LogInformation("Message sent to queue with CREATE action, ID {Id}", idMessaging);
 
                 await LogTraffic("POST - Create - ExpenseCategory - Async", "Response");
 
-                return Accepted(new { message = "Message sent for asynchronous processing." });
+                return Accepted(new { message = "Message sent for asynchronous processing", id = idMessaging });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error queuing expense category.");
-                return StatusCode(500, "Internal error processing request.");
+                return StatusCode(500, "Internal error processing the request.");
             }
         }
 

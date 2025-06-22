@@ -47,11 +47,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             );
         }
 
-        public async Task AddAsync(TransactionEntity entity)
+        public async Task<long> AddAsync(TransactionEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
-                "usp_Transaction_Add",
+            
+            var id = await connection.ExecuteScalarAsync<long>("usp_Transaction_Add",
                 new
                 {
                     entity.Name,
@@ -68,13 +68,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
-        public void AddSync(TransactionEntity entity)
+        public long AddSync(TransactionEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
-                "usp_Transaction_Add",
+            
+            var id = connection.ExecuteScalar<long>("usp_Transaction_Add",
                 new
                 {
                     entity.Name,
@@ -91,6 +93,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return id;
         }
 
         public async Task UpdateAsync(TransactionEntity entity)

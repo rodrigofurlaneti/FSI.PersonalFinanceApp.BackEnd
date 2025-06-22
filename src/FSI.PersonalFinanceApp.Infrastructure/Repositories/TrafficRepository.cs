@@ -43,10 +43,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure);
         }
 
-        public async Task AddAsync(TrafficEntity entity)
+        public async Task<long> AddAsync(TrafficEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Traffic_Add", new
+
+            var id = await connection.ExecuteScalarAsync<long>("usp_Traffic_Add", new
             {
                 entity.Method,
                 entity.Action,
@@ -55,12 +56,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 entity.CreatedAt,
                 entity.UpdatedAt
             }, commandType: CommandType.StoredProcedure);
+
+            return id;
         }
 
-        public void AddSync(TrafficEntity entity)
+        public long AddSync(TrafficEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Traffic_Add", new
+
+            var id = connection.ExecuteScalar<long>("usp_Traffic_Add", new
             {
                 entity.Method,
                 entity.Action,
@@ -69,6 +73,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 entity.CreatedAt,
                 entity.UpdatedAt
             }, commandType: CommandType.StoredProcedure);
+
+            return id;
         }
 
         public async Task UpdateAsync(TrafficEntity entity)

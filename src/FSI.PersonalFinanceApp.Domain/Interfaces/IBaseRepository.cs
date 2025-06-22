@@ -15,8 +15,8 @@ namespace FSI.PersonalFinanceApp.Domain.Interfaces
         T? GetByIdSync(long id);
 
         // Add
-        Task AddAsync(T entity);
-        void AddSync(T entity);
+        Task<long> AddAsync(T entity);
+        long AddSync(T entity);
 
         // Update
         Task UpdateAsync(T entity);

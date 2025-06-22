@@ -43,38 +43,44 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 commandType: CommandType.StoredProcedure);
         }
 
-        public async Task AddAsync(ExpenseEntity entity)
+        public async Task<long> AddAsync(ExpenseEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Expense_Add", new
-            {
-                entity.Name,
-                entity.Amount,
-                entity.DueDate,
-                entity.Description,
-                entity.PaidAt,
-                entity.ExpenseCategoryId,
-                entity.IsActive,
-                entity.CreatedAt,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+         
+            var id = await connection.ExecuteScalarAsync<long>("usp_Expense_Add", new
+                {
+                    entity.Name,
+                    entity.Amount,
+                    entity.DueDate,
+                    entity.Description,
+                    entity.PaidAt,
+                    entity.ExpenseCategoryId,
+                    entity.IsActive,
+                    entity.CreatedAt,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+
+            return id;
         }
 
-        public void AddSync(ExpenseEntity entity)
+        public long AddSync(ExpenseEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Expense_Add", new
-            {
-                entity.Name,
-                entity.Amount,
-                entity.DueDate,
-                entity.Description,
-                entity.PaidAt,
-                entity.ExpenseCategoryId,
-                entity.IsActive,
-                entity.CreatedAt,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var id = connection.ExecuteScalar<long>("usp_Expense_Add", new
+                {
+                    entity.Name,
+                    entity.Amount,
+                    entity.DueDate,
+                    entity.Description,
+                    entity.PaidAt,
+                    entity.ExpenseCategoryId,
+                    entity.IsActive,
+                    entity.CreatedAt,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+            
+            return id;
         }
 
         public async Task UpdateAsync(ExpenseEntity entity)
