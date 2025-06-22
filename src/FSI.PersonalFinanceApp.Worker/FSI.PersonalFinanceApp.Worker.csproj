@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-FSI.PersonalFinanceApp.Worker-5203815e-012d-4455-9c0f-73a8545b3056</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<PackageReference Include="RabbitMQ.Client" Version="6.8.0" />
+	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+	<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSI.PersonalFinanceApp.Application\FSI.PersonalFinanceApp.Application.csproj" />
+    <ProjectReference Include="..\FSI.PersonalFinanceApp.Infrastructure\FSI.PersonalFinanceApp.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
-using FSI.PersonalFinanceApp.Api.DependencyInjection;
 using FSI.PersonalFinanceApp.Api.Middlewares;
+using FSI.PersonalFinanceApp.Application.DependencyInjection; // ✅ Novo local correto
+using FSI.PersonalFinanceApp.Infrastructure.DependencyInjection; // ✅ Se tiver um similar para Infrastructur
 
 var builder = WebApplication.CreateBuilder(args);
 

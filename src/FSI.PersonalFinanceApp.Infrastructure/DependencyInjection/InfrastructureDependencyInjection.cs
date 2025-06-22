@@ -1,8 +1,12 @@
-﻿using FSI.PersonalFinanceApp.Domain.Interfaces;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection; // <-- esta linha faltava
+using FSI.PersonalFinanceApp.Application.Messaging;
+using FSI.PersonalFinanceApp.Domain.Interfaces;
 using FSI.PersonalFinanceApp.Infrastructure.Context;
+using FSI.PersonalFinanceApp.Infrastructure.Messaging;
 using FSI.PersonalFinanceApp.Infrastructure.Repositories;
 
-namespace FSI.PersonalFinanceApp.Api.DependencyInjection
+namespace FSI.PersonalFinanceApp.Infrastructure.DependencyInjection
 {
     public static class InfrastructureDependencyInjection
     {
@@ -10,6 +14,7 @@ namespace FSI.PersonalFinanceApp.Api.DependencyInjection
         {
             services.AddScoped<IDbContext, DapperDbContext>();
 
+            // Repositórios
             services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<IExpenseRepository, ExpenseRepository>();
             services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
@@ -18,6 +23,9 @@ namespace FSI.PersonalFinanceApp.Api.DependencyInjection
             services.AddScoped<ITrafficRepository, TrafficRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+
+            // RabbitMQ Publisher
+            services.AddSingleton<IMessageQueuePublisher, RabbitMqPublisher>();
         }
     }
 }

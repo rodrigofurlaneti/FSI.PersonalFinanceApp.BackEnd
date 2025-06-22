@@ -9,13 +9,16 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FSI.PersonalFinanceApp.Domain\FSI.PersonalFinanceApp.Domain.csproj" />
+    <ProjectReference Include="..\FSI.PersonalFinanceApp.Application\FSI.PersonalFinanceApp.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
+	<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+	<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+	<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+	<PackageReference Include="RabbitMQ.Client" Version="6.8.0" />
+	<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
   </ItemGroup>
 
 </Project>

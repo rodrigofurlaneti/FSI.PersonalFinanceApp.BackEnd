@@ -1,7 +1,8 @@
-﻿using FSI.PersonalFinanceApp.Application.Interfaces;
+﻿using Microsoft.Extensions.DependencyInjection;
+using FSI.PersonalFinanceApp.Application.Interfaces;
 using FSI.PersonalFinanceApp.Application.Services;
 
-namespace FSI.PersonalFinanceApp.Api.DependencyInjection
+namespace FSI.PersonalFinanceApp.Application.DependencyInjection
 {
     public static class ApplicationDependencyInjection
     {
