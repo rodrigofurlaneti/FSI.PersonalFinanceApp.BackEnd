@@ -81,54 +81,70 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(MessagingEntity entity)
+        public async Task<bool> UpdateAsync(MessagingEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Messaging_Update", new
-            {
-                entity.Id,
-                entity.Action,
-                entity.QueueName,
-                entity.MessageContent,
-                entity.IsProcessed,
-                entity.ErrorMessage,
-                entity.IsActive,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
+                "usp_Messaging_Update", new
+                {
+                    entity.Id,
+                    entity.Action,
+                    entity.QueueName,
+                    entity.MessageContent,
+                    entity.IsProcessed,
+                    entity.ErrorMessage,
+                    entity.IsActive,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+        
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(MessagingEntity entity)
+        public bool UpdateSync(MessagingEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Messaging_Update", new
-            {
-                entity.Id,
-                entity.Action,
-                entity.QueueName,
-                entity.MessageContent,
-                entity.IsProcessed,
-                entity.ErrorMessage,
-                entity.IsActive,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_Messaging_Update", new
+                {
+                    entity.Id,
+                    entity.Action,
+                    entity.QueueName,
+                    entity.MessageContent,
+                    entity.IsProcessed,
+                    entity.ErrorMessage,
+                    entity.IsActive,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(MessagingEntity entity)
+        public async Task<bool> DeleteAsync(MessagingEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Messaging_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
+                "usp_Messaging_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(MessagingEntity entity)
+        public bool DeleteSync(MessagingEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Messaging_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_Messaging_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         public async Task<IEnumerable<MessagingEntity>> GetAllFilteredAsync(string filterBy, string value)

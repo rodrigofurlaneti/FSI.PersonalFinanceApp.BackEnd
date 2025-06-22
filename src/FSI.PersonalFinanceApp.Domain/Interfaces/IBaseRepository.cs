@@ -19,12 +19,12 @@ namespace FSI.PersonalFinanceApp.Domain.Interfaces
         long AddSync(T entity);
 
         // Update
-        Task UpdateAsync(T entity);
-        void UpdateSync(T entity);
+        Task<bool> UpdateAsync(T entity);
+        bool UpdateSync(T entity);
 
         //Delete
-        Task DeleteAsync(T entity);
-        void DeleteSync(T entity);
+        Task<bool> DeleteAsync(T entity);
+        bool DeleteSync(T entity);
 
         // Ordered
         Task<IEnumerable<T>> GetAllOrderedAsync(string orderBy, string direction);

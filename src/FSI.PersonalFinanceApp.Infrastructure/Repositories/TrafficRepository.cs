@@ -77,50 +77,66 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(TrafficEntity entity)
+        public async Task<bool> UpdateAsync(TrafficEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Traffic_Update", new
-            {
-                entity.Id,
-                entity.Method,
-                entity.Action,
-                entity.IsActive,
-                entity.CreatedAt,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
+                "usp_Traffic_Update", new
+                {
+                    entity.Id,
+                    entity.Method,
+                    entity.Action,
+                    entity.IsActive,
+                    entity.CreatedAt,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(TrafficEntity entity)
+        public bool UpdateSync(TrafficEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Traffic_Update", new
-            {
-                entity.Id,
-                entity.Method,
-                entity.Action,
-                entity.IsActive,
-                entity.CreatedAt,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_Traffic_Update", new
+                {
+                    entity.Id,
+                    entity.Method,
+                    entity.Action,
+                    entity.IsActive,
+                    entity.CreatedAt,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(TrafficEntity entity)
+        public async Task<bool> DeleteAsync(TrafficEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Traffic_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
+                "usp_Traffic_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(TrafficEntity entity)
+        public bool DeleteSync(TrafficEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Traffic_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_Traffic_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         #endregion

@@ -87,10 +87,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(UserEntity entity)
+        public async Task<long> UpdateAsync(UserEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_User_Update",
                 new
                 {
@@ -103,12 +104,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(UserEntity entity)
+        public bool UpdateSync(UserEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_User_Update",
                 new
                 {
@@ -121,12 +125,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(UserEntity entity)
+        public async Task<bool> DeleteAsync(UserEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_User_Delete",
                 new
                 {
@@ -139,15 +146,22 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(UserEntity entity)
+        public bool DeleteSync(UserEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_User_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.Execute(
+                "usp_User_Delete", 
+                new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         #region Methods for filtering user

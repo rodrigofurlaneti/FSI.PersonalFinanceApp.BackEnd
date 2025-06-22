@@ -19,12 +19,12 @@ namespace FSI.PersonalFinanceApp.Application.Interfaces
         long AddSync(TDto dto);
 
         // Update
-        Task UpdateAsync(TDto dto);
-        void UpdateSync(TDto dto);
+        Task<bool> UpdateAsync(TDto dto);
+        bool UpdateSync(TDto dto);
 
         // Delete
-        Task DeleteAsync(TDto dto); 
-        void DeleteSync(TDto dto);
+        Task<bool> DeleteAsync(TDto dto);
+        bool DeleteSync(TDto dto);
 
         //Ordered
         Task<IEnumerable<TDto>> GetAllOrderedAsync(string orderBy, string direction);

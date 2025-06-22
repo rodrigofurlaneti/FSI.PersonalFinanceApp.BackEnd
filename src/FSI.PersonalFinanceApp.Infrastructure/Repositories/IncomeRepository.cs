@@ -94,10 +94,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(IncomeEntity entity)
+        public async Task<bool> UpdateAsync(IncomeEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+            
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_Income_Update",
                 new
                 {
@@ -113,12 +114,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(IncomeEntity entity)
+        public bool UpdateSync(IncomeEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_Income_Update",
                 new
                 {
@@ -134,12 +138,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(IncomeEntity entity)
+        public async Task<bool> DeleteAsync(IncomeEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_Income_Delete",
                 new
                 {
@@ -155,15 +162,21 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(IncomeEntity entity)
+        public bool DeleteSync(IncomeEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Income_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_Income_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         #region Methods for filtering expenses

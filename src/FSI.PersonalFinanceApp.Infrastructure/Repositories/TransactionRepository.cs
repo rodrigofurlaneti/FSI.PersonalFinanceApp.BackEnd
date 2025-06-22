@@ -97,10 +97,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(TransactionEntity entity)
+        public async Task<bool> UpdateAsync(TransactionEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_Transaction_Update",
                 new
                 {
@@ -118,12 +119,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(TransactionEntity entity)
+        public bool UpdateSync(TransactionEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_Transaction_Update",
                 new
                 {
@@ -141,12 +145,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(TransactionEntity entity)
+        public async Task<bool> DeleteAsync(TransactionEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_Transaction_Delete",
                 new
                 {
@@ -164,15 +171,22 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(TransactionEntity entity)
+        public bool DeleteSync(TransactionEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Transaction_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar(
+                "usp_Transaction_Delete", 
+                new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         #region Methods for filtering transaction

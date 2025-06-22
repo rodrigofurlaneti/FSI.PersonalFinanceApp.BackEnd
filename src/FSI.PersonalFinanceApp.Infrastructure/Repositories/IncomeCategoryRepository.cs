@@ -83,10 +83,11 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(IncomeCategoryEntity entity)
+        public async Task<bool> UpdateAsync(IncomeCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_IncomeCategory_Update",
                 new
                 {
@@ -97,12 +98,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(IncomeCategoryEntity entity)
+        public bool UpdateSync(IncomeCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute(
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_IncomeCategory_Update",
                 new
                 {
@@ -113,12 +117,15 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(IncomeCategoryEntity entity)
+        public async Task<bool> DeleteAsync(IncomeCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync(
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_IncomeCategory_Delete",
                 new
                 {
@@ -126,15 +133,21 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(IncomeCategoryEntity entity)
+        public bool DeleteSync(IncomeCategoryEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_IncomeCategory_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_IncomeCategory_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         #region Methods for filtering income category

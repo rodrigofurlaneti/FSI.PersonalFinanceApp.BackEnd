@@ -83,56 +83,72 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task UpdateAsync(ExpenseEntity entity)
+        public async Task<bool> UpdateAsync(ExpenseEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Expense_Update", new
-            {
-                entity.Id,
-                entity.Name,
-                entity.Amount,
-                entity.DueDate,
-                entity.Description,
-                entity.PaidAt,
-                entity.ExpenseCategoryId,
-                entity.IsActive,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
+                "usp_Expense_Update", new
+                {
+                    entity.Id,
+                    entity.Name,
+                    entity.Amount,
+                    entity.DueDate,
+                    entity.Description,
+                    entity.PaidAt,
+                    entity.ExpenseCategoryId,
+                    entity.IsActive,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public void UpdateSync(ExpenseEntity entity)
+        public bool UpdateSync(ExpenseEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Expense_Update", new
-            {
-                entity.Id,
-                entity.Name,
-                entity.Amount,
-                entity.DueDate,
-                entity.Description,
-                entity.PaidAt,
-                entity.ExpenseCategoryId,
-                entity.IsActive,
-                entity.UpdatedAt
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
+                "usp_Expense_Update", new
+                {
+                    entity.Id,
+                    entity.Name,
+                    entity.Amount,
+                    entity.DueDate,
+                    entity.Description,
+                    entity.PaidAt,
+                    entity.ExpenseCategoryId,
+                    entity.IsActive,
+                    entity.UpdatedAt
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public async Task DeleteAsync(ExpenseEntity entity)
+        public async Task<bool> DeleteAsync(ExpenseEntity entity)
         {
             using var connection = CreateConnection();
-            await connection.ExecuteAsync("usp_Expense_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = await connection.ExecuteScalarAsync(
+                "usp_Expense_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
-        public void DeleteSync(ExpenseEntity entity)
+        public bool DeleteSync(ExpenseEntity entity)
         {
             using var connection = CreateConnection();
-            connection.Execute("usp_Expense_Delete", new
-            {
-                entity.Id
-            }, commandType: CommandType.StoredProcedure);
+
+            var returnStoredProcedure = connection.ExecuteScalar(
+                "usp_Expense_Delete", new
+                {
+                    entity.Id
+                }, commandType: CommandType.StoredProcedure);
+
+            return returnStoredProcedure;
         }
 
         #endregion

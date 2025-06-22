@@ -50,27 +50,28 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return _repository.AddSync(entity);
         }
 
-        public async Task UpdateAsync(ExpenseCategoryDto dto)
+        public async Task<bool> UpdateAsync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            await _repository.UpdateAsync(entity);
+            return await _repository.UpdateAsync(entity);
         }
 
-        public void UpdateSync(ExpenseCategoryDto dto)
+        public bool UpdateSync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            _repository.UpdateSync(entity);
+            return _repository.UpdateSync(entity);
         }
 
-        public async Task DeleteAsync(ExpenseCategoryDto dto)
+        public async Task<bool> DeleteAsync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            await _repository.DeleteAsync(entity);
+            return await _repository.DeleteAsync(entity);
         }
-        public void DeleteSync(ExpenseCategoryDto dto)
+
+        public bool DeleteSync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            _repository.DeleteSync(entity);
+            return _repository.DeleteSync(entity);
         }
 
         public async Task<IEnumerable<ExpenseCategoryDto>> GetAllFilteredAsync(string filterBy, string value)
