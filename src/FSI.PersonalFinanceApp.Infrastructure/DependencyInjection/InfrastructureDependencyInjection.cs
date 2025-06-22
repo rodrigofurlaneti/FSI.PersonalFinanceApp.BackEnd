@@ -23,6 +23,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.DependencyInjection
             services.AddScoped<ITrafficRepository, TrafficRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IMessagingRepository, MessagingRepository>();
 
             // RabbitMQ Publisher
             services.AddSingleton<IMessageQueuePublisher, RabbitMqPublisher>();

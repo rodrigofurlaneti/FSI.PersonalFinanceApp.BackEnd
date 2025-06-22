@@ -1,7 +1,10 @@
-﻿using FSI.PersonalFinanceApp.Application.Dtos;
+﻿using Azure.Messaging;
+using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
 using FSI.PersonalFinanceApp.Application.Messaging;
+using FSI.PersonalFinanceApp.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
@@ -13,14 +16,16 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         private readonly ITrafficAppService _serviceTraffic;
         private readonly ILogger<ExpenseCategoryControllerAsync> _logger;
         private readonly IMessageQueuePublisher _publisher;
+        private readonly IMessagingAppService _messagingAppService;
 
         public ExpenseCategoryControllerAsync(IExpenseCategoryAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseCategoryControllerAsync> logger,
-            IMessageQueuePublisher publisher)
+            IMessageQueuePublisher publisher, IMessagingAppService messagingAppService)
         {
             _service = service;
             _serviceTraffic = serviceTraffic;
             _logger = logger;
             _publisher = publisher;
+            _messagingAppService = messagingAppService;
         }
 
         #region CRUD Operations
@@ -87,18 +92,23 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     Payload = dto
                 };
 
+                // Publica no RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
+                _logger.LogInformation("Message sent to queue with CREATE action");
 
-                _logger.LogInformation("Mensagem enviada para fila com ação CREATE");
+                // Grava no banco após publicação com sucesso
+                string messageContent = JsonSerializer.Serialize(envelope);
+                MessagingDto messagingDto = new MessagingDto("Create", "expense-category-queue", messageContent, false, string.Empty);
+                await _messagingAppService.AddAsync(messagingDto);
 
                 await LogTraffic("POST - Create - ExpenseCategory - Async", "Response");
 
-                return Accepted(new { message = "Mensagem enviada para processamento assíncrono" });
+                return Accepted(new { message = "Message sent for asynchronous processing." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao enfileirar categoria de despesa");
-                return StatusCode(500, "Erro interno ao processar a solicitação");
+                _logger.LogError(ex, "Error queuing expense category.");
+                return StatusCode(500, "Internal error processing request.");
             }
         }
 
@@ -128,19 +138,29 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return NotFound();
                 }
 
-                await _service.UpdateAsync(dto);
+                var envelope = new ExpenseCategoryMessage
+                {
+                    Action = "update",
+                    Payload = dto
+                };
+
+                // Publica no RabbitMQ
+                _publisher.Publish(envelope, "expense-category-queue");
+                _logger.LogInformation("Message sent to queue with UPDATE action");
+
+                // Grava no banco após publicação com sucesso
+                string messageContent = JsonSerializer.Serialize(envelope);
+                MessagingDto messagingDto = new MessagingDto("Update", "expense-category-queue", messageContent, false, string.Empty);
+                await _messagingAppService.AddAsync(messagingDto);
 
                 await LogTraffic("PUT - Update - ExpenseCategory - Async", "Response");
 
-                _logger.LogInformation("Expense category with id {ExpenseCategoryId} updated successfully", id);
-
-                return NoContent();
+                return Accepted(new { message = "Message sent for asynchronous processing." });
             }
             catch (Exception ex)
             {
-
-                _logger.LogError(ex, "Error updating expense category with id {ExpenseCategoryId}", id);
-                return StatusCode(500, "Error processing request");
+                _logger.LogError(ex, "Error queuing expense category update with id {ExpenseCategoryId}", id);
+                return StatusCode(500, "Internal error processing the request.");
             }
         }
 
@@ -158,18 +178,33 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return NotFound();
                 }
 
-                await _service.DeleteAsync(existingExpenseCategory);
+                // Cria o envelope da mensagem
+                var envelope = new ExpenseCategoryMessage
+                {
+                    Action = "delete",
+                    Payload = new ExpenseCategoryDto
+                    {
+                        Id = id
+                    }
+                };
+
+                // Publica no RabbitMQ
+                _publisher.Publish(envelope, "expense-category-queue");
+                _logger.LogInformation("Message sent to queue with DELETE action");
+
+                // Persiste no banco de dados
+                string messageContent = JsonSerializer.Serialize(envelope);
+                MessagingDto messagingDto = new MessagingDto("Delete", "expense-category-queue", messageContent, false, string.Empty);
+                await _messagingAppService.AddAsync(messagingDto);
 
                 await LogTraffic("DELETE - Delete - ExpenseCategory - Async", "Response");
 
-                _logger.LogInformation("Expense category with id {ExpenseCategoryId} deleted successfully", id);
-
-                return NoContent();
+                return Accepted(new { message = "Message sent for asynchronous processing." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting expense category with id {ExpenseCategoryId}", id);
-                return StatusCode(500, "Error processing request");
+                _logger.LogError(ex, "Error queuing deletion of expense category with id {ExpenseCategoryId}", id);
+                return StatusCode(500, "Internal error processing the request.");
             }
         }
 
