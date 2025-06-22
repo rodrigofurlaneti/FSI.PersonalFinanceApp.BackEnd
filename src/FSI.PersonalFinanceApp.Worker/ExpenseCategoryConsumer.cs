@@ -1,9 +1,10 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using FSI.PersonalFinanceApp.Application.Dtos;
+using FSI.PersonalFinanceApp.Application.Interfaces;
+using FSI.PersonalFinanceApp.Application.Messaging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using FSI.PersonalFinanceApp.Application.Dtos;
-using FSI.PersonalFinanceApp.Application.Interfaces;
+using System.Text;
+using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Worker
 {
@@ -40,9 +41,23 @@ namespace FSI.PersonalFinanceApp.Worker
                     var body = ea.Body.ToArray();
                     var message = Encoding.UTF8.GetString(body);
 
-                    var envelope = JsonSerializer.Deserialize<ExpenseCategoryEnvelope>(message);
+                    Console.WriteLine("📥 Mensagem recebida do RabbitMQ:");
+                    Console.WriteLine(message);
 
-                    if (envelope is null) return;
+                    var envelope = JsonSerializer.Deserialize<ExpenseCategoryMessage>(
+                        message,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (envelope == null)
+                    {
+                        Console.WriteLine("❌ Envelope está nulo. Verifique o formato da mensagem.");
+                        return;
+                    }
+
+                    Console.WriteLine($"✔ Ação recebida: {envelope.Action}");
+
+                    Console.WriteLine($"✔ Payload: {JsonSerializer.Serialize(envelope.Payload)}");
 
                     using var scope = _scopeFactory.CreateScope();
                     var service = scope.ServiceProvider.GetRequiredService<IExpenseCategoryAppService>();
@@ -58,16 +73,23 @@ namespace FSI.PersonalFinanceApp.Worker
                         case "delete":
                             await service.DeleteAsync(envelope.Payload);
                             break;
+                        default:
+                            Console.WriteLine($"⚠ Ação não reconhecida: {envelope.Action}");
+                            break;
                     }
+
+                    // ✅ Confirmação manual de que a mensagem foi processada com sucesso
+                    channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                 }
                 catch (Exception ex)
                 {
+                    // ❌ Não dar o Ack -> mensagem permanece na fila
                     // 🔴 Logar erro de parsing ou de serviço
                     Console.WriteLine($"Erro ao processar mensagem: {ex.Message}");
                 }
             };
 
-            channel.BasicConsume(queue: "expense-category-queue", autoAck: true, consumer: consumer);
+            channel.BasicConsume(queue: "expense-category-queue", autoAck: false, consumer: consumer);
 
             // 🔄 Loop para manter o serviço ativo enquanto não for cancelado
             return Task.Run(async () =>
@@ -82,11 +104,5 @@ namespace FSI.PersonalFinanceApp.Worker
                 connection.Close();
             }, stoppingToken);
         }
-    }
-
-    public class ExpenseCategoryEnvelope
-    {
-        public string Action { get; set; } = "";
-        public ExpenseCategoryDto Payload { get; set; } = new();
     }
 }

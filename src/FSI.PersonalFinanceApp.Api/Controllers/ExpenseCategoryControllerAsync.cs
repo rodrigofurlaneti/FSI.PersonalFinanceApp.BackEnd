@@ -1,5 +1,6 @@
 ﻿using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
+using FSI.PersonalFinanceApp.Application.Messaging;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
@@ -11,12 +12,15 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         private readonly IExpenseCategoryAppService _service;
         private readonly ITrafficAppService _serviceTraffic;
         private readonly ILogger<ExpenseCategoryControllerAsync> _logger;
+        private readonly IMessageQueuePublisher _publisher;
 
-        public ExpenseCategoryControllerAsync(IExpenseCategoryAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseCategoryControllerAsync> logger)
+        public ExpenseCategoryControllerAsync(IExpenseCategoryAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseCategoryControllerAsync> logger,
+            IMessageQueuePublisher publisher)
         {
             _service = service;
             _serviceTraffic = serviceTraffic;
             _logger = logger;
+            _publisher = publisher;
         }
 
         #region CRUD Operations
@@ -73,25 +77,28 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
             try
             {
                 if (!ModelState.IsValid)
-                {
-                    _logger.LogWarning("Invalid model state for expense creation: {@ExpenseDto}", dto);
                     return BadRequest(ModelState);
-                }
 
                 await LogTraffic("POST - Create - ExpenseCategory - Async", "Request");
 
-                await _service.AddAsync(dto);
+                var envelope = new ExpenseCategoryMessage
+                {
+                    Action = "create",
+                    Payload = dto
+                };
+
+                _publisher.Publish(envelope, "expense-category-queue");
+
+                _logger.LogInformation("Mensagem enviada para fila com ação CREATE");
 
                 await LogTraffic("POST - Create - ExpenseCategory - Async", "Response");
 
-                _logger.LogInformation("Expense category created with id {ExpenseCategoryId}", dto.Id);
-
-                return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+                return Accepted(new { message = "Mensagem enviada para processamento assíncrono" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating expense category: {@ExpenseCategoryDto}", dto);
-                return StatusCode(500, "Error processing request");
+                _logger.LogError(ex, "Erro ao enfileirar categoria de despesa");
+                return StatusCode(500, "Erro interno ao processar a solicitação");
             }
         }
 
