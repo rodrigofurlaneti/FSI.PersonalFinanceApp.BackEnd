@@ -1,6 +1,9 @@
 ﻿using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
+using FSI.PersonalFinanceApp.Application.Messaging;
+using FSI.PersonalFinanceApp.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
@@ -11,12 +14,16 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         private readonly IExpenseAppService _service;
         private readonly ITrafficAppService _serviceTraffic;
         private readonly ILogger<ExpenseControllerAsync> _logger;
+        private readonly IMessageQueuePublisher _publisher;
+        private readonly IMessagingAppService _messagingAppService;
 
-        public ExpenseControllerAsync(IExpenseAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseControllerAsync> logger)
+        public ExpenseControllerAsync(IExpenseAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseControllerAsync> logger, IMessageQueuePublisher publisher, IMessagingAppService messagingAppService)
         {
             _service = service;
             _serviceTraffic = serviceTraffic;
             _logger = logger;
+            _publisher = publisher;
+            _messagingAppService = messagingAppService;
         }
 
         #region CRUD Operations
@@ -26,11 +33,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAll - Expense - Async", "Request");
+                await LogTrafficAsync("GET - GetAll - Expense - Async", "Request");
 
                 var result = await _service.GetAllAsync();
 
-                await LogTraffic("GET - GetAll - Expense - Async", "Response");
+                await LogTrafficAsync("GET - GetAll - Expense - Async", "Response");
 
                 return Ok(result);
             }
@@ -46,11 +53,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetById - Expense - Async", "Request");
+                await LogTrafficAsync("GET - GetById - Expense - Async", "Request");
 
                 var result = await _service.GetByIdAsync(id);
 
-                await LogTraffic("GET - GetById - Expense - Async", "Response");
+                await LogTrafficAsync("GET - GetById - Expense - Async", "Response");
 
                 if (result is null)
                 {
@@ -78,11 +85,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                await LogTraffic("POST - Create - Expense - Async", "Request");
+                await LogTrafficAsync("POST - Create - Expense - Async", "Request");
 
                 await _service.AddAsync(dto);
 
-                await LogTraffic("POST - Create - Expense - Async", "Response");
+                await LogTrafficAsync("POST - Create - Expense - Async", "Response");
 
                 _logger.LogInformation("Expense created with id {ExpenseId}", dto.Id);
 
@@ -112,7 +119,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest("ID mismatch");
                 }
 
-                await LogTraffic("PUT - Update - Expense - Async", "Request");
+                await LogTrafficAsync("PUT - Update - Expense - Async", "Request");
 
                 var existingExpense = await _service.GetByIdAsync(id);
                 if (existingExpense is null)
@@ -123,7 +130,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.UpdateAsync(dto);
 
-                await LogTraffic("PUT - Update - Expense - Async", "Response");
+                await LogTrafficAsync("PUT - Update - Expense - Async", "Response");
 
                 _logger.LogInformation("Expense with id {ExpenseId} updated successfully", id);
 
@@ -141,7 +148,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("DELETE - Delete - Expense - Async", "Request");
+                await LogTrafficAsync("DELETE - Delete - Expense - Async", "Request");
 
                 var existingExpense = await _service.GetByIdAsync(id);
                 if (existingExpense is null)
@@ -152,7 +159,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.DeleteAsync(existingExpense);
 
-                await LogTraffic("DELETE - Delete - Expense - Async", "Response");
+                await LogTrafficAsync("DELETE - Delete - Expense - Async", "Response");
 
                 _logger.LogInformation("Expense with id {ExpenseId} deleted successfully", id);
 
@@ -170,11 +177,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllFiltered - Expense - Async", "Request");
+                await LogTrafficAsync("GET - GetAllFiltered - Expense - Async", "Request");
 
                 var result = await _service.GetAllFilteredAsync(filterBy, value);
 
-                await LogTraffic("GET - GetAllFiltered - Expense - Async", "Response");
+                await LogTrafficAsync("GET - GetAllFiltered - Expense - Async", "Response");
 
                 return Ok(result);
             }
@@ -190,11 +197,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllOrdered - Expense - Async", "Request");
+                await LogTrafficAsync("GET - GetAllOrdered - Expense - Async", "Request");
 
                 var result = await _service.GetAllOrderedAsync(orderBy, direction);
 
-                await LogTraffic("GET - GetAllOrdered - Expense - Async", "Response");
+                await LogTrafficAsync("GET - GetAllOrdered - Expense - Async", "Response");
 
                 return Ok(result);
             }
@@ -209,13 +216,138 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #endregion
 
+        #region CRUD Operations Async - Event Driven Architecture - Request response via polling - Async Message Dispatch with Deferred Response
+
+        [HttpPost("event/getall")]
+        public async Task<IActionResult> MessageGetAllAsync()
+        {
+            await LogTrafficAsync("POST - MessageGetAllAsync", "Request");
+            return await SendMessageAsync("getall", new ExpenseDto(), "POST - MessageGetAll");
+        }
+
+        [HttpPost("event/getbyid/{id:long}")]
+        public async Task<IActionResult> MessageGetByIdAsync(long id)
+        {
+            await LogTrafficAsync("POST - MessageGetByIdAsync", "Request");
+            return await SendMessageAsync("getbyid", new ExpenseDto { Id = id }, "POST - MessageGetById");
+        }
+
+        [HttpPost("event/create")]
+        public async Task<IActionResult> MessageCreateAsync([FromBody] ExpenseDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await LogTrafficAsync("POST - MessageCreateAsync", "Request");
+            return await SendMessageAsync("create", dto, "POST - MessageCreate");
+        }
+
+        [HttpPut("event/update/{id:long}")]
+        public async Task<IActionResult> MessageUpdateAsync(long id, [FromBody] ExpenseDto dto)
+        {
+            if (!ModelState.IsValid || id != dto.Id)
+                return BadRequest("Invalid payload or ID mismatch.");
+
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("PUT - MessageUpdate", "Request");
+            return await SendMessageAsync("update", dto, "PUT - MessageUpdate");
+        }
+
+        [HttpGet("event/result/{id:long}")]
+        public async Task<IActionResult> GetResultAsync(long id)
+        {
+            try
+            {
+                var result = await _messagingAppService.GetByIdAsync(id);
+
+                if (result == null)
+                    return NotFound("Message not found.");
+
+                if (!result.IsProcessed)
+                    return Accepted(new { message = "Still in processing", id });
+
+                object? response;
+
+                // Determina como desserializar com base na ação original
+                switch (result.Action.ToLowerInvariant())
+                {
+                    case "getall":
+                        response = JsonSerializer.Deserialize<IEnumerable<ExpenseDto>>(result.MessageResponse);
+                        break;
+
+                    case "create":
+                    case "update":
+                    case "delete":
+                        response = result.MessageResponse;
+                        break;
+
+                    case "getbyid":
+                        response = JsonSerializer.Deserialize<ExpenseDto>(result.MessageResponse);
+                        break;
+
+                    default:
+                        _logger.LogWarning("Unknown action '{Action}' in result ID {Id}", result.Action, id);
+                        return BadRequest("Unknown action type.");
+                }
+
+                return Ok(new
+                {
+                    id = result.Id,
+                    originalAction = result.Action,
+                    processed = result.IsProcessed,
+                    response
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error querying message ID result {MessagingId}", id);
+                return StatusCode(500, "Error getting message result.");
+            }
+        }
+
+
+        #endregion
+
         #region Additional Methods  
 
         #endregion
 
         #region Additional Methods Private 
 
-        private async Task LogTraffic(string method, string action)
+        private async Task<IActionResult> SendMessageAsync(string action, ExpenseDto payload, string logPrefix)
+        {
+            var envelope = new ExpenseMessage
+            {
+                Action = action,
+                Payload = payload,
+                MessagingId = 0
+            };
+
+            var messageRequest = JsonSerializer.Serialize(envelope);
+
+            var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
+                action,
+                "expense-queue",
+                messageRequest,
+                false,
+                string.Empty
+            ));
+
+            envelope.MessagingId = idMessaging;
+
+            _publisher.Publish(envelope, "expense-queue");
+
+            _logger.LogInformation("📤 '{Action}' message sent to queue, ID {Id}", action, idMessaging);
+
+            await LogTrafficAsync($"{logPrefix} - Expense - Async", "Response");
+
+            return Accepted(new { message = "Request queued successfully", id = idMessaging });
+        }
+
+        private async Task LogTrafficAsync(string method, string action)
         {
             var dto = new TrafficDto(method, action, DateTime.Now);
             await _serviceTraffic.AddAsync(dto);

@@ -20,6 +20,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.DependencyInjection
             services.AddScoped<IExpenseCategoryRepository, ExpenseCategoryRepository>();
             services.AddScoped<IIncomeRepository, IncomeRepository>();
             services.AddScoped<IIncomeCategoryRepository, IncomeCategoryRepository>();
+            services.AddScoped<IFinancialGoalRepository, FinancialGoalRepository>();
             services.AddScoped<ITrafficRepository, TrafficRepository>();
             services.AddScoped<ITransactionRepository, TransactionRepository>();
             services.AddScoped<IUserRepository, UserRepository>();

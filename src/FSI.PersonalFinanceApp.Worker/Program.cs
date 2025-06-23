@@ -11,6 +11,8 @@ var host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
     {
         services.AddHostedService<ExpenseCategoryConsumer>();
+        services.AddHostedService<ExpenseConsumer>();
+        services.AddHostedService<FinancialGoalConsumer>();
         services.AddApplicationServices(); // camada Application
         services.AddInfrastructure(context.Configuration); // camada Infrastructure
     })
