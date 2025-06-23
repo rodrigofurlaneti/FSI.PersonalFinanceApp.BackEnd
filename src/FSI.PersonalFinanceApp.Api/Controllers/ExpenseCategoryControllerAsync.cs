@@ -151,24 +151,37 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return NotFound();
                 }
 
+                // Monta a mensagem (sem ainda publicar)
                 var envelope = new ExpenseCategoryMessage
                 {
                     Action = "update",
-                    Payload = dto
+                    Payload = dto,
+                    MessagingId = 0
                 };
+
+                // Serializa o conteúdo da mensagem
+                string messageContent = JsonSerializer.Serialize(envelope);
+
+                // Salva na tabela Messaging e pega o ID
+                var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
+                    "Update",
+                    "expense-category-queue",
+                    messageContent,
+                    false,
+                    string.Empty
+                ));
+
+                // Monta a mensagem com o id
+                envelope.MessagingId = idMessaging;
 
                 // Publica no RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
-                _logger.LogInformation("Message sent to queue with UPDATE action");
 
-                // Grava no banco após publicação com sucesso
-                string messageContent = JsonSerializer.Serialize(envelope);
-                MessagingDto messagingDto = new MessagingDto("Update", "expense-category-queue", messageContent, false, string.Empty);
-                await _messagingAppService.AddAsync(messagingDto);
+                _logger.LogInformation("Message sent to queue with UPDATE action, ID {Id}", idMessaging);
 
                 await LogTraffic("PUT - Update - ExpenseCategory - Async", "Response");
 
-                return Accepted(new { message = "Message sent for asynchronous processing." });
+                return Accepted(new { message = "Message sent for asynchronous processing", id = idMessaging });
             }
             catch (Exception ex)
             {
@@ -198,21 +211,33 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     Payload = new ExpenseCategoryDto
                     {
                         Id = id
-                    }
+                    },
+                    MessagingId = 0
                 };
+
+                // Serializa o conteúdo da mensagem
+                string messageContent = JsonSerializer.Serialize(envelope);
+
+                // Salva na tabela Messaging e pega o ID
+                var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
+                    "Delete",
+                    "expense-category-queue",
+                    messageContent,
+                    false,
+                    string.Empty
+                ));
+
+                // Monta a mensagem com o id
+                envelope.MessagingId = idMessaging;
 
                 // Publica no RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
-                _logger.LogInformation("Message sent to queue with DELETE action");
 
-                // Persiste no banco de dados
-                string messageContent = JsonSerializer.Serialize(envelope);
-                MessagingDto messagingDto = new MessagingDto("Delete", "expense-category-queue", messageContent, false, string.Empty);
-                await _messagingAppService.AddAsync(messagingDto);
+                _logger.LogInformation("Message sent to queue with DELETE action, ID {Id}", idMessaging);
 
                 await LogTraffic("DELETE - Delete - ExpenseCategory - Async", "Response");
 
-                return Accepted(new { message = "Message sent for asynchronous processing." });
+                return Accepted(new { message = "Message sent for asynchronous processing", id = idMessaging });
             }
             catch (Exception ex)
             {

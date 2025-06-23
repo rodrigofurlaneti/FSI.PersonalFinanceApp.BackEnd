@@ -129,7 +129,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         {
             using var connection = CreateConnection();
 
-            var returnStoredProcedure = await connection.ExecuteScalarAsync(
+            var returnStoredProcedure = await connection.ExecuteScalarAsync<bool>(
                 "usp_Expense_Delete", new
                 {
                     entity.Id
@@ -142,7 +142,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         {
             using var connection = CreateConnection();
 
-            var returnStoredProcedure = connection.ExecuteScalar(
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_Expense_Delete", new
                 {
                     entity.Id

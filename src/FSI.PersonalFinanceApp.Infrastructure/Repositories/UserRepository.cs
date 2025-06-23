@@ -87,7 +87,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             return id;
         }
 
-        public async Task<long> UpdateAsync(UserEntity entity)
+        public async Task<bool> UpdateAsync(UserEntity entity)
         {
             using var connection = CreateConnection();
 
@@ -154,7 +154,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         {
             using var connection = CreateConnection();
 
-            var returnStoredProcedure = connection.Execute(
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_User_Delete", 
                 new
                 {

@@ -69,26 +69,40 @@ namespace FSI.PersonalFinanceApp.Worker
 
                     long? createdId = null;
 
+                    bool isDone = false;
+
                     switch (envelope.Action.ToLowerInvariant())
                     {
                         case "create":
                             createdId = await service.AddAsync(envelope.Payload); 
                             break;
                         case "update":
-                            await service.UpdateAsync(envelope.Payload);
+                            isDone = await service.UpdateAsync(envelope.Payload);
                             break;
                         case "delete":
-                            await service.DeleteAsync(envelope.Payload);
+                            isDone = await service.DeleteAsync(envelope.Payload);
                             break;
                         default:
                             Console.WriteLine($"⚠ Action not recognized: {envelope.Action}");
                             break;
                     }
 
-                    // ✅ Updates the processing status of the record in the database to processed
+                    // ✅ The processing status of the record in the database to processed type create
                     if (envelope.MessagingId > 0 && envelope.Action.Equals("create", StringComparison.OrdinalIgnoreCase))
                     {
-                        await UpdateProcessedMessageAsync(messagingService, envelope, nameQueue, createdId);
+                        await ProcessedMessageCreateAsync(messagingService, envelope, nameQueue, createdId);
+                    }
+
+                    // ✅ The processing status of the record in the database to processed type update
+                    if (envelope.MessagingId > 0 && envelope.Action.Equals("update", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await ProcessedMessageUpdateAsync(messagingService, envelope, nameQueue, isDone);
+                    }
+
+                    // ✅ The processing status of the record in the database to processed type delete
+                    if (envelope.MessagingId > 0 && envelope.Action.Equals("delete", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await ProcessedMessageDeleteAsync(messagingService, envelope, nameQueue, isDone);
                     }
 
                     // ✅ Manual confirmation that the message was processed successfully
@@ -118,7 +132,7 @@ namespace FSI.PersonalFinanceApp.Worker
             }, stoppingToken);
         }
 
-        private async Task UpdateProcessedMessageAsync(IMessagingAppService messagingService,ExpenseCategoryMessage envelope,
+        private async Task ProcessedMessageCreateAsync(IMessagingAppService messagingService,ExpenseCategoryMessage envelope,
             string queueName,long? createdId)
         {
             if (createdId != null)
@@ -147,7 +161,89 @@ namespace FSI.PersonalFinanceApp.Worker
                 await messagingService.UpdateAsync(new MessagingDto
                 {
                     Id = envelope.MessagingId,
-                    Action = envelope.Action,
+                    Action = "Create",
+                    QueueName = queueName,
+                    MessageContent = JsonSerializer.Serialize(envelope),
+                    IsProcessed = false,
+                    ErrorMessage = "Failed to insert expense category into database.",
+                    UpdatedAt = DateTime.Now,
+                    IsActive = false
+                });
+
+                Console.WriteLine($"❌ Failed to process message ID {envelope.MessagingId}: creation returned null.");
+            }
+        }
+
+        private async Task ProcessedMessageUpdateAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope,
+    string queueName, bool isDone)
+        {
+            if (isDone)
+            {
+                envelope.Payload.UpdatedAt = DateTime.Now;
+
+                var updatedContent = JsonSerializer.Serialize(envelope);
+
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "Update",
+                    QueueName = queueName,
+                    MessageContent = updatedContent,
+                    IsProcessed = true,
+                    ErrorMessage = string.Empty,
+                    UpdatedAt = DateTime.Now,
+                    IsActive = true
+                });
+
+                Console.WriteLine($"✔ Message ID {envelope.MessagingId} marked as processed.");
+            }
+            else
+            {
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "Update",
+                    QueueName = queueName,
+                    MessageContent = JsonSerializer.Serialize(envelope),
+                    IsProcessed = false,
+                    ErrorMessage = "Failed to insert expense category into database.",
+                    UpdatedAt = DateTime.Now,
+                    IsActive = false
+                });
+
+                Console.WriteLine($"❌ Failed to process message ID {envelope.MessagingId}: creation returned null.");
+            }
+        }
+
+        private async Task ProcessedMessageDeleteAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope,
+    string queueName, bool isDone)
+        {
+            if (isDone)
+            {
+                envelope.Payload.UpdatedAt = DateTime.Now;
+
+                var updatedContent = JsonSerializer.Serialize(envelope);
+
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "Delete",
+                    QueueName = queueName,
+                    MessageContent = updatedContent,
+                    IsProcessed = true,
+                    ErrorMessage = string.Empty,
+                    UpdatedAt = DateTime.Now,
+                    IsActive = true
+                });
+
+                Console.WriteLine($"✔ Message ID {envelope.MessagingId} marked as processed.");
+            }
+            else
+            {
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "Delete",
                     QueueName = queueName,
                     MessageContent = JsonSerializer.Serialize(envelope),
                     IsProcessed = false,

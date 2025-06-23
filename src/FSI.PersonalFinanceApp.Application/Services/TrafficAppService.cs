@@ -53,28 +53,28 @@ namespace FSI.PersonalFinanceApp.Application.Services
             return _repository.AddSync(entity);
         }
 
-        public async Task UpdateAsync(TrafficDto dto)
+        public async Task<bool> UpdateAsync(TrafficDto dto)
         {
             var entity = TrafficMapper.ToEntity(dto);
-            await _repository.UpdateAsync(entity);
+            return await _repository.UpdateAsync(entity);
         }
 
-        public void UpdateSync(TrafficDto dto)
+        public bool UpdateSync(TrafficDto dto)
         {
             var entity = TrafficMapper.ToEntity(dto);
-            _repository.UpdateSync(entity);
+            return _repository.UpdateSync(entity);
         }
 
-        public async Task DeleteAsync(TrafficDto dto)
+        public async Task<bool> DeleteAsync(TrafficDto dto)
         {
             var entity = TrafficMapper.ToEntity(dto);
-            await _repository.DeleteAsync(entity);
+            return await _repository.DeleteAsync(entity);
         }
 
-        public void DeleteSync(TrafficDto dto)
+        public bool DeleteSync(TrafficDto dto)
         {
             var entity = TrafficMapper.ToEntity(dto);
-            _repository.DeleteSync(entity);
+            return _repository.DeleteSync(entity);
         }
 
         public async Task<IEnumerable<TrafficDto>> GetAllFilteredAsync(string filterBy, string value)

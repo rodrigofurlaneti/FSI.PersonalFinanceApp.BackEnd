@@ -179,7 +179,7 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         {
             using var connection = CreateConnection();
 
-            var returnStoredProcedure = connection.ExecuteScalar(
+            var returnStoredProcedure = connection.ExecuteScalar<bool>(
                 "usp_Transaction_Delete", 
                 new
                 {
