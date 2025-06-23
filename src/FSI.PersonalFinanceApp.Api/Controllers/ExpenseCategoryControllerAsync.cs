@@ -4,6 +4,7 @@ using FSI.PersonalFinanceApp.Application.Interfaces;
 using FSI.PersonalFinanceApp.Application.Messaging;
 using FSI.PersonalFinanceApp.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
@@ -30,23 +31,72 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #region CRUD Operations
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        [HttpPost("getall")]
+        public async Task<IActionResult> PublishGetAll()
         {
             try
             {
-                await LogTraffic("GET - GetAll - ExpenseCategory - Async", "Request");
+                await LogTraffic("POST - PublishGetAll - ExpenseCategory - Async", "Request");
 
-                var result = await _service.GetAllAsync();
+                var envelope = new ExpenseCategoryMessage
+                {
+                    Action = "getall",
+                    Payload = new ExpenseCategoryDto(),
+                    MessagingId = 0
+                };
 
-                await LogTraffic("GET - GetAll - ExpenseCategory - Async", "Response");
+                var messageRequest = JsonSerializer.Serialize(envelope);
 
-                return Ok(result);
+                var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
+                    "GetAll",
+                    "expense-category-queue",
+                    messageRequest,
+                    false,
+                    string.Empty
+                ));
+
+                envelope.MessagingId = idMessaging;
+
+                _publisher.Publish(envelope, "expense-category-queue");
+
+                _logger.LogInformation("📤 'getall' message sent to queue, ID {Id}", idMessaging);
+
+                await LogTraffic("POST - PublishGetAll - ExpenseCategory - Async", "Response");
+
+                return Accepted(new { message = "Request queued successfully", id = idMessaging });
             }
-            catch (Exception exception)
+            catch (Exception ex)
             {
-                _logger.LogError(exception, "Error getting expenses categories");
-                return StatusCode(500, "Error processing request");
+                _logger.LogError(ex, "Error queuing getall request");
+                return StatusCode(500, "Internal error processing the request.");
+            }
+        }
+
+        [HttpGet("result/{id:long}")]
+        public async Task<IActionResult> GetAsyncResult(long id)
+        {
+            try
+            {
+                var result = await _messagingAppService.GetByIdAsync(id);
+
+                if (result == null)
+                    return NotFound("Message not found.");
+
+                if (!result.IsProcessed)
+                    return Accepted(new { message = "Still in processing", id = id });
+
+                return Ok(new
+                {
+                    id = result.Id,
+                    originalAction = result.Action,
+                    processed = result.IsProcessed,
+                    response = JsonSerializer.Deserialize<IEnumerable<ExpenseCategoryDto>>(result.MessageResponse)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error querying message ID result {MessagingId}", id);
+                return StatusCode(500, "Error getting message result.");
             }
         }
 
@@ -86,7 +136,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await LogTraffic("POST - Create - ExpenseCategory - Async", "Request");
 
-                // Monta a mensagem (sem ainda publicar)
+                // Assemble the message (without publishing yet)
                 var envelope = new ExpenseCategoryMessage
                 {
                     Action = "create",
@@ -94,22 +144,22 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     MessagingId = 0 
                 };
 
-                // Serializa o conteúdo da mensagem
-                string messageContent = JsonSerializer.Serialize(envelope);
+                // Serializes the message content
+                string messageRequest = JsonSerializer.Serialize(envelope);
 
-                // Salva na tabela Messaging e pega o ID
+                // Saves to the Messaging table and gets the ID
                 var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
                     "Create",
                     "expense-category-queue",
-                    messageContent,
+                    messageRequest,
                     false,
                     string.Empty
                 ));
 
-                // Monta a mensagem com o id
+                // Assemble the message with the id
                 envelope.MessagingId = idMessaging;
 
-                // Publica no RabbitMQ
+                // Publish on RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
 
                 _logger.LogInformation("Message sent to queue with CREATE action, ID {Id}", idMessaging);
@@ -151,7 +201,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return NotFound();
                 }
 
-                // Monta a mensagem (sem ainda publicar)
+                // Assemble the message (without publishing yet)
                 var envelope = new ExpenseCategoryMessage
                 {
                     Action = "update",
@@ -159,22 +209,22 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     MessagingId = 0
                 };
 
-                // Serializa o conteúdo da mensagem
-                string messageContent = JsonSerializer.Serialize(envelope);
+                // Serializes the content of the request message
+                string messageRequest = JsonSerializer.Serialize(envelope);
 
-                // Salva na tabela Messaging e pega o ID
+                // Saves to the Messaging table and gets the ID
                 var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
                     "Update",
                     "expense-category-queue",
-                    messageContent,
+                    messageRequest,
                     false,
                     string.Empty
                 ));
 
-                // Monta a mensagem com o id
+                // Assemble the message with the id
                 envelope.MessagingId = idMessaging;
 
-                // Publica no RabbitMQ
+                // Publish on RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
 
                 _logger.LogInformation("Message sent to queue with UPDATE action, ID {Id}", idMessaging);
@@ -204,7 +254,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return NotFound();
                 }
 
-                // Cria o envelope da mensagem
+                // Creates the message envelope
                 var envelope = new ExpenseCategoryMessage
                 {
                     Action = "delete",
@@ -215,22 +265,22 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     MessagingId = 0
                 };
 
-                // Serializa o conteúdo da mensagem
-                string messageContent = JsonSerializer.Serialize(envelope);
+                // Serializes the message content request
+                string messageRequest = JsonSerializer.Serialize(envelope);
 
-                // Salva na tabela Messaging e pega o ID
+                // Saves to the Messaging table and gets the ID
                 var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
                     "Delete",
                     "expense-category-queue",
-                    messageContent,
+                    messageRequest,
                     false,
                     string.Empty
                 ));
 
-                // Monta a mensagem com o id
+                // Assemble the message with the id
                 envelope.MessagingId = idMessaging;
 
-                // Publica no RabbitMQ
+                // Publish on RabbitMQ
                 _publisher.Publish(envelope, "expense-category-queue");
 
                 _logger.LogInformation("Message sent to queue with DELETE action, ID {Id}", idMessaging);

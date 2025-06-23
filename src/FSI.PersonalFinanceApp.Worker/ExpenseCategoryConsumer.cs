@@ -71,10 +71,15 @@ namespace FSI.PersonalFinanceApp.Worker
 
                     bool isDone = false;
 
+                    IEnumerable<ExpenseCategoryDto> listExpenseCategory = null;
+
                     switch (envelope.Action.ToLowerInvariant())
                     {
                         case "create":
                             createdId = await service.AddAsync(envelope.Payload); 
+                            break;
+                        case "getall":
+                            listExpenseCategory = await service.GetAllAsync();
                             break;
                         case "update":
                             isDone = await service.UpdateAsync(envelope.Payload);
@@ -91,6 +96,12 @@ namespace FSI.PersonalFinanceApp.Worker
                     if (envelope.MessagingId > 0 && envelope.Action.Equals("create", StringComparison.OrdinalIgnoreCase))
                     {
                         await ProcessedMessageCreateAsync(messagingService, envelope, nameQueue, createdId);
+                    }
+
+                    // ✅ The processing status of the record in the database to processed type get all
+                    if (envelope.MessagingId > 0 && envelope.Action.Equals("getall", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await ProcessedMessageGetAllAsync(messagingService, envelope, nameQueue, listExpenseCategory);
                     }
 
                     // ✅ The processing status of the record in the database to processed type update
@@ -140,14 +151,15 @@ namespace FSI.PersonalFinanceApp.Worker
                 envelope.Payload.Id = createdId.Value;
                 envelope.Payload.UpdatedAt = DateTime.Now;
 
-                var updatedContent = JsonSerializer.Serialize(envelope);
+                var updatedContentRequest = JsonSerializer.Serialize(envelope);
 
                 await messagingService.UpdateAsync(new MessagingDto
                 {
                     Id = envelope.MessagingId,
                     Action = "Create",
                     QueueName = queueName,
-                    MessageContent = updatedContent,
+                    MessageRequest = updatedContentRequest,
+                    MessageResponse = string.Empty,
                     IsProcessed = true,
                     ErrorMessage = string.Empty,
                     UpdatedAt = DateTime.Now,
@@ -163,7 +175,50 @@ namespace FSI.PersonalFinanceApp.Worker
                     Id = envelope.MessagingId,
                     Action = "Create",
                     QueueName = queueName,
-                    MessageContent = JsonSerializer.Serialize(envelope),
+                    MessageRequest = JsonSerializer.Serialize(envelope),
+                    MessageResponse = string.Empty,
+                    IsProcessed = false,
+                    ErrorMessage = "Failed to insert expense category into database.",
+                    UpdatedAt = DateTime.Now,
+                    IsActive = false
+                });
+
+                Console.WriteLine($"❌ Failed to process message ID {envelope.MessagingId}: creation returned null.");
+            }
+        }
+
+        private async Task ProcessedMessageGetAllAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope,
+            string queueName, IEnumerable<ExpenseCategoryDto> listExpenseCategory)
+        {
+            if (listExpenseCategory != null)
+            {
+              
+                var updatedResponse = JsonSerializer.Serialize(listExpenseCategory);
+
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "GetAll",
+                    QueueName = queueName,
+                    MessageRequest = string.Empty,
+                    MessageResponse = updatedResponse,
+                    IsProcessed = true,
+                    ErrorMessage = string.Empty,
+                    UpdatedAt = DateTime.Now,
+                    IsActive = true
+                });
+
+                Console.WriteLine($"✔ Message ID {envelope.MessagingId} marked as processed.");
+            }
+            else
+            {
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "Create",
+                    QueueName = queueName,
+                    MessageRequest = JsonSerializer.Serialize(envelope),
+                    MessageResponse = JsonSerializer.Serialize(listExpenseCategory),
                     IsProcessed = false,
                     ErrorMessage = "Failed to insert expense category into database.",
                     UpdatedAt = DateTime.Now,
@@ -188,7 +243,8 @@ namespace FSI.PersonalFinanceApp.Worker
                     Id = envelope.MessagingId,
                     Action = "Update",
                     QueueName = queueName,
-                    MessageContent = updatedContent,
+                    MessageRequest = updatedContent,
+                    MessageResponse = string.Empty,
                     IsProcessed = true,
                     ErrorMessage = string.Empty,
                     UpdatedAt = DateTime.Now,
@@ -204,7 +260,8 @@ namespace FSI.PersonalFinanceApp.Worker
                     Id = envelope.MessagingId,
                     Action = "Update",
                     QueueName = queueName,
-                    MessageContent = JsonSerializer.Serialize(envelope),
+                    MessageRequest = JsonSerializer.Serialize(envelope),
+                    MessageResponse = string.Empty,
                     IsProcessed = false,
                     ErrorMessage = "Failed to insert expense category into database.",
                     UpdatedAt = DateTime.Now,
@@ -229,7 +286,8 @@ namespace FSI.PersonalFinanceApp.Worker
                     Id = envelope.MessagingId,
                     Action = "Delete",
                     QueueName = queueName,
-                    MessageContent = updatedContent,
+                    MessageRequest = updatedContent,
+                    MessageResponse = string.Empty, 
                     IsProcessed = true,
                     ErrorMessage = string.Empty,
                     UpdatedAt = DateTime.Now,
@@ -245,7 +303,8 @@ namespace FSI.PersonalFinanceApp.Worker
                     Id = envelope.MessagingId,
                     Action = "Delete",
                     QueueName = queueName,
-                    MessageContent = JsonSerializer.Serialize(envelope),
+                    MessageRequest = JsonSerializer.Serialize(envelope),
+                    MessageResponse = string.Empty,
                     IsProcessed = false,
                     ErrorMessage = "Failed to insert expense category into database.",
                     UpdatedAt = DateTime.Now,

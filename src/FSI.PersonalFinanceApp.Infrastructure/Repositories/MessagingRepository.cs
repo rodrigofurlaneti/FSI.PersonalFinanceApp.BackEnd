@@ -51,7 +51,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             {
                 entity.Action,
                 entity.QueueName,
-                entity.MessageContent,
+                entity.MessageRequest,
+                entity.MessageResponse,
                 entity.IsProcessed,
                 entity.ErrorMessage,
                 entity.IsActive,
@@ -70,7 +71,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
             {
                 entity.Action,
                 entity.QueueName,
-                entity.MessageContent,
+                entity.MessageRequest,
+                entity.MessageResponse,
                 entity.IsProcessed,
                 entity.ErrorMessage,
                 entity.IsActive,
@@ -91,7 +93,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                     entity.Id,
                     entity.Action,
                     entity.QueueName,
-                    entity.MessageContent,
+                    entity.MessageRequest,
+                    entity.MessageResponse,
                     entity.IsProcessed,
                     entity.ErrorMessage,
                     entity.IsActive,
@@ -111,7 +114,8 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
                     entity.Id,
                     entity.Action,
                     entity.QueueName,
-                    entity.MessageContent,
+                    entity.MessageRequest,
+                    entity.MessageResponse,
                     entity.IsProcessed,
                     entity.ErrorMessage,
                     entity.IsActive,
@@ -166,15 +170,6 @@ namespace FSI.PersonalFinanceApp.Infrastructure.Repositories
         {
             throw new NotImplementedException();
         }
-        public async Task MarkAsProcessedAsync(long id)
-        {
-            using var connection = CreateConnection();
-
-            var sql = @"UPDATE Messaging SET IsProcessed = 1, UpdatedAt = GETDATE() WHERE Id = @Id";
-
-            await connection.ExecuteAsync(sql, new { Id = id });
-        }
-
 
         #endregion
     }

@@ -12,7 +12,8 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
                 Id = dto.Id,
                 Action = dto.Action,
                 QueueName = dto.QueueName,
-                MessageContent = dto.MessageContent,
+                MessageRequest = dto.MessageRequest,
+                MessageResponse = dto.MessageResponse,
                 IsProcessed = dto.IsProcessed,
                 ErrorMessage = dto.ErrorMessage,
                 CreatedAt = DateTime.Now,
@@ -26,8 +27,10 @@ namespace FSI.PersonalFinanceApp.Application.Mapper
             return new MessagingDto
             {
                 Id = entity.Id,
+                Action = entity.Action,
                 QueueName = entity.QueueName,
-                MessageContent = entity.MessageContent,
+                MessageRequest = entity.MessageRequest,
+                MessageResponse = entity.MessageResponse,
                 IsProcessed = entity.IsProcessed,
                 ErrorMessage = entity.ErrorMessage,
                 CreatedAt = entity.CreatedAt,
