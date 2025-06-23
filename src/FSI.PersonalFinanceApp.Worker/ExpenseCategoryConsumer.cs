@@ -21,7 +21,7 @@ namespace FSI.PersonalFinanceApp.Worker
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            string nameQueue = "expense-category-queue";
+            string queueName = "expense-category-queue";
 
             var factory = new ConnectionFactory
             {
@@ -33,7 +33,7 @@ namespace FSI.PersonalFinanceApp.Worker
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 
-            channel.QueueDeclare(queue: nameQueue, durable: true, exclusive: false, autoDelete: false, arguments: null);
+            channel.QueueDeclare(queue: queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
 
             var consumer = new EventingBasicConsumer(channel);
             consumer.Received += async (sender, ea) =>
@@ -73,6 +73,8 @@ namespace FSI.PersonalFinanceApp.Worker
 
                     IEnumerable<ExpenseCategoryDto> listExpenseCategory = null;
 
+                    ExpenseCategoryDto expenseCategory = null;
+
                     switch (envelope.Action.ToLowerInvariant())
                     {
                         case "create":
@@ -80,6 +82,9 @@ namespace FSI.PersonalFinanceApp.Worker
                             break;
                         case "getall":
                             listExpenseCategory = await service.GetAllAsync();
+                            break;
+                        case "getbyid":
+                            expenseCategory = await service.GetByIdAsync(envelope.Payload.Id);
                             break;
                         case "update":
                             isDone = await service.UpdateAsync(envelope.Payload);
@@ -92,29 +97,7 @@ namespace FSI.PersonalFinanceApp.Worker
                             break;
                     }
 
-                    // ✅ The processing status of the record in the database to processed type create
-                    if (envelope.MessagingId > 0 && envelope.Action.Equals("create", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await ProcessedMessageCreateAsync(messagingService, envelope, nameQueue, createdId);
-                    }
-
-                    // ✅ The processing status of the record in the database to processed type get all
-                    if (envelope.MessagingId > 0 && envelope.Action.Equals("getall", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await ProcessedMessageGetAllAsync(messagingService, envelope, nameQueue, listExpenseCategory);
-                    }
-
-                    // ✅ The processing status of the record in the database to processed type update
-                    if (envelope.MessagingId > 0 && envelope.Action.Equals("update", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await ProcessedMessageUpdateAsync(messagingService, envelope, nameQueue, isDone);
-                    }
-
-                    // ✅ The processing status of the record in the database to processed type delete
-                    if (envelope.MessagingId > 0 && envelope.Action.Equals("delete", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await ProcessedMessageDeleteAsync(messagingService, envelope, nameQueue, isDone);
-                    }
+                    await ProcessedMessageAsync(messagingService, envelope, queueName, createdId, isDone, listExpenseCategory, expenseCategory);
 
                     // ✅ Manual confirmation that the message was processed successfully
                     channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
@@ -127,7 +110,7 @@ namespace FSI.PersonalFinanceApp.Worker
                 }
             };
 
-            channel.BasicConsume(queue: nameQueue, autoAck: false, consumer: consumer);
+            channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
 
             // 🔄 Loop para manter o serviço ativo enquanto não for cancelado
             return Task.Run(async () =>
@@ -141,6 +124,40 @@ namespace FSI.PersonalFinanceApp.Worker
                 channel.Close();
                 connection.Close();
             }, stoppingToken);
+        }
+
+        private async Task ProcessedMessageAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope, string queueName, long? createdId, bool isDone, 
+            IEnumerable<ExpenseCategoryDto> listExpenseCategory, ExpenseCategoryDto expenseCategory)
+        {
+            // ✅ The processing status of the record in the database to processed type create
+            if (envelope.MessagingId > 0 && envelope.Action.Equals("create", StringComparison.OrdinalIgnoreCase))
+            {
+                await ProcessedMessageCreateAsync(messagingService, envelope, queueName, createdId);
+            }
+
+            // ✅ The processing status of the record in the database to processed type get all
+            if (envelope.MessagingId > 0 && envelope.Action.Equals("getall", StringComparison.OrdinalIgnoreCase))
+            {
+                await ProcessedMessageGetAllAsync(messagingService, envelope, queueName, listExpenseCategory);
+            }
+
+            // ✅ The processing status of the record in the database to processed type get by id
+            if (envelope.MessagingId > 0 && envelope.Action.Equals("getbyid", StringComparison.OrdinalIgnoreCase))
+            {
+                await ProcessedMessageGetByIdAsync(messagingService, envelope, queueName, expenseCategory);
+            }
+
+            // ✅ The processing status of the record in the database to processed type update
+            if (envelope.MessagingId > 0 && envelope.Action.Equals("update", StringComparison.OrdinalIgnoreCase))
+            {
+                await ProcessedMessageUpdateAsync(messagingService, envelope, queueName, isDone);
+            }
+
+            // ✅ The processing status of the record in the database to processed type delete
+            if (envelope.MessagingId > 0 && envelope.Action.Equals("delete", StringComparison.OrdinalIgnoreCase))
+            {
+                await ProcessedMessageDeleteAsync(messagingService, envelope, queueName, isDone);
+            }
         }
 
         private async Task ProcessedMessageCreateAsync(IMessagingAppService messagingService,ExpenseCategoryMessage envelope,
@@ -192,7 +209,6 @@ namespace FSI.PersonalFinanceApp.Worker
         {
             if (listExpenseCategory != null)
             {
-              
                 var updatedResponse = JsonSerializer.Serialize(listExpenseCategory);
 
                 await messagingService.UpdateAsync(new MessagingDto
@@ -215,9 +231,9 @@ namespace FSI.PersonalFinanceApp.Worker
                 await messagingService.UpdateAsync(new MessagingDto
                 {
                     Id = envelope.MessagingId,
-                    Action = "Create",
+                    Action = "GetAll",
                     QueueName = queueName,
-                    MessageRequest = JsonSerializer.Serialize(envelope),
+                    MessageRequest = string.Empty,
                     MessageResponse = JsonSerializer.Serialize(listExpenseCategory),
                     IsProcessed = false,
                     ErrorMessage = "Failed to insert expense category into database.",
@@ -229,8 +245,51 @@ namespace FSI.PersonalFinanceApp.Worker
             }
         }
 
+        private async Task ProcessedMessageGetByIdAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope,
+            string queueName, ExpenseCategoryDto expenseCategory)
+        {
+            if (expenseCategory != null)
+            {
+                var updatedRequest = JsonSerializer.Serialize(envelope);
+
+                var updatedResponse = JsonSerializer.Serialize(expenseCategory);
+
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "GetById",
+                    QueueName = queueName,
+                    MessageRequest = updatedRequest,
+                    MessageResponse = updatedResponse,
+                    IsProcessed = true,
+                    ErrorMessage = string.Empty,
+                    UpdatedAt = DateTime.Now,
+                    IsActive = true
+                });
+
+                Console.WriteLine($"✔ Message ID {envelope.MessagingId} marked as processed.");
+            }
+            else
+            {
+                await messagingService.UpdateAsync(new MessagingDto
+                {
+                    Id = envelope.MessagingId,
+                    Action = "GetById",
+                    QueueName = queueName,
+                    MessageRequest = JsonSerializer.Serialize(envelope),
+                    MessageResponse = JsonSerializer.Serialize(expenseCategory),
+                    IsProcessed = false,
+                    ErrorMessage = "Failed to insert expense category into database.",
+                    UpdatedAt = DateTime.Now,
+                    IsActive = false
+                });
+
+                Console.WriteLine($"❌ Failed to process message ID {envelope.MessagingId}: get by id returned null.");
+            }
+        }
+
         private async Task ProcessedMessageUpdateAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope,
-    string queueName, bool isDone)
+            string queueName, bool isDone)
         {
             if (isDone)
             {
@@ -273,7 +332,7 @@ namespace FSI.PersonalFinanceApp.Worker
         }
 
         private async Task ProcessedMessageDeleteAsync(IMessagingAppService messagingService, ExpenseCategoryMessage envelope,
-    string queueName, bool isDone)
+            string queueName, bool isDone)
         {
             if (isDone)
             {

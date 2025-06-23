@@ -41,37 +41,43 @@ namespace FSI.PersonalFinanceApp.Application.Services
         public async Task<long> AddAsync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            return await _repository.AddAsync(entity);
+            var id = await _repository.AddAsync(entity);
+            return id;
         }
 
         public long AddSync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            return _repository.AddSync(entity);
+            var id = _repository.AddSync(entity);
+            return id;
         }
 
         public async Task<bool> UpdateAsync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            return await _repository.UpdateAsync(entity);
+            var ret = await _repository.UpdateAsync(entity);
+            return ret;
         }
 
         public bool UpdateSync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            return _repository.UpdateSync(entity);
+            var ret = _repository.UpdateSync(entity);
+            return ret;
         }
 
         public async Task<bool> DeleteAsync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            return await _repository.DeleteAsync(entity);
+            var ret = await _repository.DeleteAsync(entity);
+            return ret;
         }
 
         public bool DeleteSync(ExpenseCategoryDto dto)
         {
             var entity = ExpenseCategoryMapper.ToEntity(dto);
-            return _repository.DeleteSync(entity);
+            var ret = _repository.DeleteSync(entity);
+            return ret;
         }
 
         public async Task<IEnumerable<ExpenseCategoryDto>> GetAllFilteredAsync(string filterBy, string value)
