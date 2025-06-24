@@ -1,6 +1,6 @@
 ﻿namespace FSI.PersonalFinanceApp.Application.Dtos
 {
-    public class IncomeDto
+    public class IncomeDto : IBaseDto
     {
         public long Id { get; set; }
         public string Name { get; set; } = string.Empty;

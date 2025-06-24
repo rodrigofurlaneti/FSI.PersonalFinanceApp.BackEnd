@@ -1,22 +1,22 @@
-﻿using FSI.PersonalFinanceApp.Application.Dtos;
+﻿using FSI.PersonalFinanceApp.Api.Controllers.Base;
+using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
+using FSI.PersonalFinanceApp.Application.Messaging;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
     [Route("api/income-categories/async")]
-    public class IncomeCategoryControllerAsync : ControllerBase
+    public class IncomeCategoryControllerAsync : BaseAsyncController<IncomeCategoryDto>
     {
         private readonly IIncomeCategoryAppService _service;
-        private readonly ITrafficAppService _serviceTraffic;
-        private readonly ILogger<IncomeCategoryControllerAsync> _logger;
 
-        public IncomeCategoryControllerAsync(IIncomeCategoryAppService service, ITrafficAppService serviceTraffic, ILogger<IncomeCategoryControllerAsync> logger)
+        public IncomeCategoryControllerAsync(IIncomeCategoryAppService service, ITrafficAppService trafficService, ILogger<IncomeCategoryControllerAsync> logger,
+            IMessageQueuePublisher publisher, IMessagingAppService messagingService) : base(logger, publisher, messagingService, trafficService)
         {
             _service = service;
-            _serviceTraffic = serviceTraffic;
-            _logger = logger;
         }
 
         #region CRUD Operations
@@ -26,11 +26,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAll - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("GET - GetAll - IncomeCategory - Async", "Request");
 
                 var result = await _service.GetAllAsync();
 
-                await LogTraffic("GET - GetAll - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("GET - GetAll - IncomeCategory - Async", "Response");
 
                 return Ok(result);
             }
@@ -46,11 +46,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetById - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("GET - GetById - IncomeCategory - Async", "Request");
 
                 var result = await _service.GetByIdAsync(id);
 
-                await LogTraffic("GET - GetById - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("GET - GetById - IncomeCategory - Async", "Response");
 
                 if (result is null)
                 {
@@ -78,11 +78,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                await LogTraffic("POST - Create - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("POST - Create - IncomeCategory - Async", "Request");
 
                 await _service.AddAsync(dto);
 
-                await LogTraffic("POST - Create - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("POST - Create - IncomeCategory - Async", "Response");
 
                 _logger.LogInformation("Income category created with id {IncomeCategoryId}", dto.Id);
 
@@ -112,7 +112,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest("ID mismatch");
                 }
 
-                await LogTraffic("PUT - Update - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("PUT - Update - IncomeCategory - Async", "Request");
 
                 var existingIncomeCategory = await _service.GetByIdAsync(id);
                 if (existingIncomeCategory is null)
@@ -123,7 +123,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.UpdateAsync(dto);
 
-                await LogTraffic("PUT - Update - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("PUT - Update - IncomeCategory - Async", "Response");
 
                 _logger.LogInformation("Income category with id {IncomeCategoryId} updated successfully", id);
 
@@ -141,7 +141,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("DELETE - Delete - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("DELETE - Delete - IncomeCategory - Async", "Request");
 
                 var existingIncomeCategory = await _service.GetByIdAsync(id);
                 if (existingIncomeCategory is null)
@@ -152,7 +152,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.DeleteAsync(existingIncomeCategory);
 
-                await LogTraffic("DELETE - Delete - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("DELETE - Delete - IncomeCategory - Async", "Response");
 
                 _logger.LogInformation("Income category with id {IncomeCategoryId} deleted successfully", id);
 
@@ -170,11 +170,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllFiltered - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("GET - GetAllFiltered - IncomeCategory - Async", "Request");
 
                 var result = await _service.GetAllFilteredAsync(filterBy, value);
 
-                await LogTraffic("GET - GetAllFiltered - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("GET - GetAllFiltered - IncomeCategory - Async", "Response");
 
                 return Ok(result);
             }
@@ -190,11 +190,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllOrdered - IncomeCategory - Async", "Request");
+                await LogTrafficAsync("GET - GetAllOrdered - IncomeCategory - Async", "Request");
 
                 var result = await _service.GetAllOrderedAsync(orderBy, direction);
 
-                await LogTraffic("GET - GetAllOrdered - IncomeCategory - Async", "Response");
+                await LogTrafficAsync("GET - GetAllOrdered - IncomeCategory - Async", "Response");
 
                 return Ok(result);
             }
@@ -207,18 +207,77 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #endregion
 
-        #region Additional Methods
-        // Add any additional methods specific to income categories here, if needed.
-        #endregion
+        #region CRUD Operations Async - Event Driven Architecture - Request response via polling - Async Message Dispatch with Deferred Response
 
-        #region Additional Methods Private 
-
-        private async Task LogTraffic(string method, string action)
+        [HttpPost("event/getall")]
+        public async Task<IActionResult> MessageGetAllAsync()
         {
-            var dto = new TrafficDto(method, action, DateTime.Now);
-            await _serviceTraffic.AddAsync(dto);
+            await LogTrafficAsync("POST - MessageGetAllAsync", "Request");
+            return await SendMessageAsync("getall", new IncomeCategoryDto(), "POST - MessageGetAll", "income-category-queue");
         }
 
+        [HttpPost("event/getbyid/{id:long}")]
+        public async Task<IActionResult> MessageGetByIdAsync(long id)
+        {
+            await LogTrafficAsync("POST - MessageGetByIdAsync", "Request");
+            return await SendMessageAsync("getbyid", new IncomeCategoryDto { Id = id }, "POST - MessageGetById", "income-category-queue");
+        }
+
+        [HttpPost("event/create")]
+        public async Task<IActionResult> MessageCreateAsync([FromBody] IncomeCategoryDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await LogTrafficAsync("POST - MessageCreateAsync", "Request");
+            return await SendMessageAsync("create", dto, "POST - MessageCreate", "income-category-queue");
+        }
+
+        [HttpPut("event/update/{id:long}")]
+        public async Task<IActionResult> MessageUpdateAsync(long id, [FromBody] IncomeCategoryDto dto)
+        {
+            if (!ModelState.IsValid || id != dto.Id)
+                return BadRequest("Invalid payload or ID mismatch.");
+
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("PUT - MessageUpdate", "Request");
+            return await SendMessageAsync("update", dto, "PUT - MessageUpdate", "income-category-queue");
+        }
+
+        [HttpGet("event/result/{id:long}")]
+        public async Task<IActionResult> GetResultAsync(long id)
+        {
+            return await GetResultAsyncInternal(id, (action, messageResponse) =>
+            {
+                return action.ToLowerInvariant() switch
+                {
+                    "getall" => JsonSerializer.Deserialize<IEnumerable<IncomeCategoryDto>>(messageResponse),
+                    "getbyid" => JsonSerializer.Deserialize<IncomeCategoryDto>(messageResponse),
+                    "create" or "update" or "delete" => messageResponse,
+                    _ => null
+                };
+            });
+        }
+
+        [HttpDelete("event/delete/{id:long}")]
+        public async Task<IActionResult> MessageDeleteAsync(long id)
+        {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("DELETE - MessageDeleteAsync", "Request");
+            return await SendMessageAsync("delete", new IncomeCategoryDto { Id = id }, "DELETE - MessageDelete", "income-category-queue");
+        }
+
+
+        #endregion
+
+        #region Additional Methods
+        // Add any additional methods specific to income categories here, if needed.
         #endregion
     }
 }

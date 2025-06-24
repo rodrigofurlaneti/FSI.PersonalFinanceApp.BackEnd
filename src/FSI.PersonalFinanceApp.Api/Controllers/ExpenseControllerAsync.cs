@@ -1,4 +1,5 @@
-﻿using FSI.PersonalFinanceApp.Application.Dtos;
+﻿using FSI.PersonalFinanceApp.Api.Controllers.Base;
+using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
 using FSI.PersonalFinanceApp.Application.Messaging;
 using FSI.PersonalFinanceApp.Application.Services;
@@ -9,21 +10,16 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
     [Route("api/expenses/async")]
-    public class ExpenseControllerAsync : ControllerBase
+    public class ExpenseControllerAsync : BaseAsyncController<ExpenseDto>
     {
         private readonly IExpenseAppService _service;
-        private readonly ITrafficAppService _serviceTraffic;
-        private readonly ILogger<ExpenseControllerAsync> _logger;
-        private readonly IMessageQueuePublisher _publisher;
         private readonly IMessagingAppService _messagingAppService;
 
-        public ExpenseControllerAsync(IExpenseAppService service, ITrafficAppService serviceTraffic, ILogger<ExpenseControllerAsync> logger, IMessageQueuePublisher publisher, IMessagingAppService messagingAppService)
+        public ExpenseControllerAsync(IExpenseAppService service, ITrafficAppService trafficService, ILogger<ExpenseControllerAsync> logger,
+            IMessageQueuePublisher publisher, IMessagingAppService messagingService) : base(logger, publisher, messagingService, trafficService)
         {
             _service = service;
-            _serviceTraffic = serviceTraffic;
-            _logger = logger;
-            _publisher = publisher;
-            _messagingAppService = messagingAppService;
+            _messagingAppService = messagingService;
         }
 
         #region CRUD Operations
@@ -222,14 +218,14 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         public async Task<IActionResult> MessageGetAllAsync()
         {
             await LogTrafficAsync("POST - MessageGetAllAsync", "Request");
-            return await SendMessageAsync("getall", new ExpenseDto(), "POST - MessageGetAll");
+            return await SendMessageAsync("getall", new ExpenseDto(), "POST - MessageGetAll", "expense-queue");
         }
 
         [HttpPost("event/getbyid/{id:long}")]
         public async Task<IActionResult> MessageGetByIdAsync(long id)
         {
             await LogTrafficAsync("POST - MessageGetByIdAsync", "Request");
-            return await SendMessageAsync("getbyid", new ExpenseDto { Id = id }, "POST - MessageGetById");
+            return await SendMessageAsync("getbyid", new ExpenseDto { Id = id }, "POST - MessageGetById", "expense-queue");
         }
 
         [HttpPost("event/create")]
@@ -239,7 +235,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 return BadRequest(ModelState);
 
             await LogTrafficAsync("POST - MessageCreateAsync", "Request");
-            return await SendMessageAsync("create", dto, "POST - MessageCreate");
+            return await SendMessageAsync("create", dto, "POST - MessageCreate", "expense-queue");
         }
 
         [HttpPut("event/update/{id:long}")]
@@ -253,105 +249,38 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                 return NotFound();
 
             await LogTrafficAsync("PUT - MessageUpdate", "Request");
-            return await SendMessageAsync("update", dto, "PUT - MessageUpdate");
+            return await SendMessageAsync("update", dto, "PUT - MessageUpdate", "expense-queue");
         }
 
         [HttpGet("event/result/{id:long}")]
         public async Task<IActionResult> GetResultAsync(long id)
         {
-            try
+            return await GetResultAsyncInternal(id, (action, messageResponse) =>
             {
-                var result = await _messagingAppService.GetByIdAsync(id);
-
-                if (result == null)
-                    return NotFound("Message not found.");
-
-                if (!result.IsProcessed)
-                    return Accepted(new { message = "Still in processing", id });
-
-                object? response;
-
-                // Determina como desserializar com base na ação original
-                switch (result.Action.ToLowerInvariant())
+                return action.ToLowerInvariant() switch
                 {
-                    case "getall":
-                        response = JsonSerializer.Deserialize<IEnumerable<ExpenseDto>>(result.MessageResponse);
-                        break;
-
-                    case "create":
-                    case "update":
-                    case "delete":
-                        response = result.MessageResponse;
-                        break;
-
-                    case "getbyid":
-                        response = JsonSerializer.Deserialize<ExpenseDto>(result.MessageResponse);
-                        break;
-
-                    default:
-                        _logger.LogWarning("Unknown action '{Action}' in result ID {Id}", result.Action, id);
-                        return BadRequest("Unknown action type.");
-                }
-
-                return Ok(new
-                {
-                    id = result.Id,
-                    originalAction = result.Action,
-                    processed = result.IsProcessed,
-                    response
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error querying message ID result {MessagingId}", id);
-                return StatusCode(500, "Error getting message result.");
-            }
+                    "getall" => JsonSerializer.Deserialize<IEnumerable<ExpenseDto>>(messageResponse),
+                    "getbyid" => JsonSerializer.Deserialize<ExpenseDto>(messageResponse),
+                    "create" or "update" or "delete" => messageResponse,
+                    _ => null
+                };
+            });
         }
 
+        [HttpDelete("event/delete/{id:long}")]
+        public async Task<IActionResult> MessageDeleteAsync(long id)
+        {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("DELETE - MessageDeleteAsync", "Request");
+            return await SendMessageAsync("delete", new ExpenseDto { Id = id }, "DELETE - MessageDelete", "expense-queue");
+        }
 
         #endregion
 
         #region Additional Methods  
-
-        #endregion
-
-        #region Additional Methods Private 
-
-        private async Task<IActionResult> SendMessageAsync(string action, ExpenseDto payload, string logPrefix)
-        {
-            var envelope = new ExpenseMessage
-            {
-                Action = action,
-                Payload = payload,
-                MessagingId = 0
-            };
-
-            var messageRequest = JsonSerializer.Serialize(envelope);
-
-            var idMessaging = await _messagingAppService.AddAsync(new MessagingDto(
-                action,
-                "expense-queue",
-                messageRequest,
-                false,
-                string.Empty
-            ));
-
-            envelope.MessagingId = idMessaging;
-
-            _publisher.Publish(envelope, "expense-queue");
-
-            _logger.LogInformation("📤 '{Action}' message sent to queue, ID {Id}", action, idMessaging);
-
-            await LogTrafficAsync($"{logPrefix} - Expense - Async", "Response");
-
-            return Accepted(new { message = "Request queued successfully", id = idMessaging });
-        }
-
-        private async Task LogTrafficAsync(string method, string action)
-        {
-            var dto = new TrafficDto(method, action, DateTime.Now);
-            await _serviceTraffic.AddAsync(dto);
-        }
 
         #endregion
     }

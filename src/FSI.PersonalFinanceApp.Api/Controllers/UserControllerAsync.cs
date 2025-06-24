@@ -1,22 +1,22 @@
-﻿using FSI.PersonalFinanceApp.Application.Dtos;
+﻿using FSI.PersonalFinanceApp.Api.Controllers.Base;
+using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
+using FSI.PersonalFinanceApp.Application.Messaging;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
     [Route("api/users/async")]
-    public class UserControllerAsync : ControllerBase
+    public class UserControllerAsync : BaseAsyncController<UserDto>
     {
         private readonly IUserAppService _service;
-        private readonly ITrafficAppService _serviceTraffic;
-        private readonly ILogger<UserControllerAsync> _logger;
 
-        public UserControllerAsync(IUserAppService service, ITrafficAppService serviceTraffic, ILogger<UserControllerAsync> logger)
+        public UserControllerAsync(IUserAppService service, ITrafficAppService trafficService, ILogger<UserControllerAsync> logger,
+            IMessageQueuePublisher publisher, IMessagingAppService messagingService) : base(logger, publisher, messagingService, trafficService)
         {
             _service = service;
-            _serviceTraffic = serviceTraffic;
-            _logger = logger;
         }
 
         #region CRUD Operations
@@ -26,11 +26,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAll - User - Async", "Request");
+                await LogTrafficAsync("GET - GetAll - User - Async", "Request");
 
                 var result = await _service.GetAllAsync();
 
-                await LogTraffic("GET - GetAll - User - Async", "Response");
+                await LogTrafficAsync("GET - GetAll - User - Async", "Response");
 
                 return Ok(result);
             }
@@ -46,11 +46,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetById - User - Async", "Request");
+                await LogTrafficAsync("GET - GetById - User - Async", "Request");
 
                 var result = await _service.GetByIdAsync(id);
 
-                await LogTraffic("GET - GetById - User - Async", "Response");
+                await LogTrafficAsync("GET - GetById - User - Async", "Response");
 
                 if (result is null)
                 {
@@ -78,11 +78,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                await LogTraffic("POST - Create - User - Async", "Request");
+                await LogTrafficAsync("POST - Create - User - Async", "Request");
 
                 await _service.AddAsync(dto);
 
-                await LogTraffic("POST - Create - User - Async", "Response");
+                await LogTrafficAsync("POST - Create - User - Async", "Response");
 
                 _logger.LogInformation("User created with id {UserId}", dto.Id);
 
@@ -112,7 +112,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest("ID mismatch");
                 }
 
-                await LogTraffic("PUT - Update - User - Async", "Request");
+                await LogTrafficAsync("PUT - Update - User - Async", "Request");
 
                 var existingUser = await _service.GetByIdAsync(id);
                 if (existingUser is null)
@@ -123,7 +123,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.UpdateAsync(dto);
 
-                await LogTraffic("PUT - Update - User - Async", "Response");
+                await LogTrafficAsync("PUT - Update - User - Async", "Response");
 
                 _logger.LogInformation("User with id {UserId} updated successfully", id);
 
@@ -141,7 +141,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("DELETE - Delete - User - Async", "Request");
+                await LogTrafficAsync("DELETE - Delete - User - Async", "Request");
 
                 var existingUser = await _service.GetByIdAsync(id);
                 if (existingUser is null)
@@ -152,7 +152,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.DeleteAsync(existingUser);
 
-                await LogTraffic("DELETE - Delete - User - Async", "Response");
+                await LogTrafficAsync("DELETE - Delete - User - Async", "Response");
 
                 _logger.LogInformation("User with id {UserId} deleted successfully", id);
 
@@ -170,11 +170,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllFiltered - User - Async", "Request");
+                await LogTrafficAsync("GET - GetAllFiltered - User - Async", "Request");
 
                 var result = await _service.GetAllFilteredAsync(filterBy, value);
 
-                await LogTraffic("GET - GetAllFiltered - User - Async", "Response");
+                await LogTrafficAsync("GET - GetAllFiltered - User - Async", "Response");
 
                 return Ok(result);
             }
@@ -190,11 +190,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllOrdered - User - Async", "Request");
+                await LogTrafficAsync("GET - GetAllOrdered - User - Async", "Request");
 
                 var result = await _service.GetAllOrderedAsync(orderBy, direction);
 
-                await LogTraffic("GET - GetAllOrdered - User - Async", "Response");
+                await LogTrafficAsync("GET - GetAllOrdered - User - Async", "Response");
 
                 return Ok(result);
             }
@@ -207,18 +207,77 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #endregion
 
+        #region CRUD Operations Async - Event Driven Architecture - Request response via polling - Async Message Dispatch with Deferred Response
+
+        [HttpPost("event/getall")]
+        public async Task<IActionResult> MessageGetAllAsync()
+        {
+            await LogTrafficAsync("POST - MessageGetAllAsync", "Request");
+            return await SendMessageAsync("getall", new UserDto(), "POST - MessageGetAll", "user-queue");
+        }
+
+        [HttpPost("event/getbyid/{id:long}")]
+        public async Task<IActionResult> MessageGetByIdAsync(long id)
+        {
+            await LogTrafficAsync("POST - MessageGetByIdAsync", "Request");
+            return await SendMessageAsync("getbyid", new UserDto { Id = id }, "POST - MessageGetById", "user-queue");
+        }
+
+        [HttpPost("event/create")]
+        public async Task<IActionResult> MessageCreateAsync([FromBody] UserDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await LogTrafficAsync("POST - MessageCreateAsync", "Request");
+            return await SendMessageAsync("create", dto, "POST - MessageCreate", "user-queue");
+        }
+
+        [HttpPut("event/update/{id:long}")]
+        public async Task<IActionResult> MessageUpdateAsync(long id, [FromBody] UserDto dto)
+        {
+            if (!ModelState.IsValid || id != dto.Id)
+                return BadRequest("Invalid payload or ID mismatch.");
+
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("PUT - MessageUpdate", "Request");
+            return await SendMessageAsync("update", dto, "PUT - MessageUpdate", "user-queue");
+        }
+
+        [HttpGet("event/result/{id:long}")]
+        public async Task<IActionResult> GetResultAsync(long id)
+        {
+            return await GetResultAsyncInternal(id, (action, messageResponse) =>
+            {
+                return action.ToLowerInvariant() switch
+                {
+                    "getall" => JsonSerializer.Deserialize<IEnumerable<UserDto>>(messageResponse),
+                    "getbyid" => JsonSerializer.Deserialize<UserDto>(messageResponse),
+                    "create" or "update" or "delete" => messageResponse,
+                    _ => null
+                };
+            });
+        }
+
+        [HttpDelete("event/delete/{id:long}")]
+        public async Task<IActionResult> MessageDeleteAsync(long id)
+        {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("DELETE - MessageDeleteAsync", "Request");
+            return await SendMessageAsync("delete", new UserDto { Id = id }, "DELETE - MessageDelete", "user-queue");
+        }
+
+        #endregion
+
         #region Additional Methods  
 
         #endregion
 
-        #region Additional Methods Private 
-
-        private async Task LogTraffic(string method, string action)
-        {
-            var dto = new TrafficDto(method, action, DateTime.Now);
-            await _serviceTraffic.AddAsync(dto);
-        }
-
-        #endregion
     }
 }

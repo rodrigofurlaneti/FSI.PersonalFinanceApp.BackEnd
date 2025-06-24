@@ -1,20 +1,22 @@
-﻿using FSI.PersonalFinanceApp.Application.Dtos;
+﻿using FSI.PersonalFinanceApp.Api.Controllers.Base;
+using FSI.PersonalFinanceApp.Application.Dtos;
 using FSI.PersonalFinanceApp.Application.Interfaces;
+using FSI.PersonalFinanceApp.Application.Messaging;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace FSI.PersonalFinanceApp.Api.Controllers
 {
     [ApiController]
     [Route("api/traffics/async")]
-    public class TrafficControllerAsync : ControllerBase
+    public class TrafficControllerAsync : BaseAsyncController<TrafficDto>
     {
         private readonly ITrafficAppService _service;
-        private readonly ILogger<TrafficControllerAsync> _logger;
 
-        public TrafficControllerAsync(ITrafficAppService service, ILogger<TrafficControllerAsync> logger)
+        public TrafficControllerAsync(ITrafficAppService service, ITrafficAppService trafficService, ILogger<TrafficControllerAsync> logger,
+            IMessageQueuePublisher publisher, IMessagingAppService messagingService) : base(logger, publisher, messagingService, trafficService)
         {
             _service = service;
-            _logger = logger;
         }
 
         #region CRUD Operations
@@ -24,11 +26,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAll - Traffic - Async", "Request");
+                await LogTrafficAsync("GET - GetAll - Traffic - Async", "Request");
 
                 var result = await _service.GetAllAsync();
 
-                await LogTraffic("GET - GetAll - Traffic - Async", "Response");
+                await LogTrafficAsync("GET - GetAll - Traffic - Async", "Response");
 
                 return Ok(result);
             }
@@ -44,11 +46,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetById - Traffic - Async", "Request");
+                await LogTrafficAsync("GET - GetById - Traffic - Async", "Request");
 
                 var result = await _service.GetByIdAsync(id);
 
-                await LogTraffic("GET - GetById - Traffic - Async", "Response");
+                await LogTrafficAsync("GET - GetById - Traffic - Async", "Response");
 
                 if (result is null)
                 {
@@ -76,11 +78,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                await LogTraffic("POST - Create - Traffic - Async", "Request");
+                await LogTrafficAsync("POST - Create - Traffic - Async", "Request");
 
                 await _service.AddAsync(dto);
 
-                await LogTraffic("POST - Create - Traffic - Async", "Response");
+                await LogTrafficAsync("POST - Create - Traffic - Async", "Response");
 
                 _logger.LogInformation("Traffic created with id {TrafficId}", dto.Id);
 
@@ -110,7 +112,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
                     return BadRequest("ID mismatch");
                 }
 
-                await LogTraffic("PUT - Update - Traffic - Async", "Request");
+                await LogTrafficAsync("PUT - Update - Traffic - Async", "Request");
 
                 var existingTraffic = await _service.GetByIdAsync(id);
                 if (existingTraffic is null)
@@ -121,7 +123,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.UpdateAsync(dto);
 
-                await LogTraffic("PUT - Update - Traffic - Async", "Response");
+                await LogTrafficAsync("PUT - Update - Traffic - Async", "Response");
 
                 _logger.LogInformation("Traffic with id {TrafficId} updated successfully", id);
 
@@ -139,7 +141,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("DELETE - Delete - Traffic - Async", "Request");
+                await LogTrafficAsync("DELETE - Delete - Traffic - Async", "Request");
 
                 var existingTraffic = await _service.GetByIdAsync(id);
                 if (existingTraffic is null)
@@ -150,7 +152,7 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
                 await _service.DeleteAsync(existingTraffic);
 
-                await LogTraffic("DELETE - Delete - Traffic - Async", "Response");
+                await LogTrafficAsync("DELETE - Delete - Traffic - Async", "Response");
 
                 _logger.LogInformation("Traffic with id {TrafficId} deleted successfully", id);
 
@@ -168,11 +170,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllFiltered - Traffic - Async", "Request");
+                await LogTrafficAsync("GET - GetAllFiltered - Traffic - Async", "Request");
 
                 var result = await _service.GetAllFilteredAsync(filterBy, value);
 
-                await LogTraffic("GET - GetAllFiltered - Traffic - Async", "Response");
+                await LogTrafficAsync("GET - GetAllFiltered - Traffic - Async", "Response");
 
                 return Ok(result);
             }
@@ -188,11 +190,11 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
         {
             try
             {
-                await LogTraffic("GET - GetAllOrdered - Traffic - Async", "Request");
+                await LogTrafficAsync("GET - GetAllOrdered - Traffic - Async", "Request");
 
                 var result = await _service.GetAllOrderedAsync(orderBy, direction);
 
-                await LogTraffic("GET - GetAllOrdered - Traffic - Async", "Response");
+                await LogTrafficAsync("GET - GetAllOrdered - Traffic - Async", "Response");
 
                 return Ok(result);
             }
@@ -205,18 +207,77 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #endregion
 
+        #region CRUD Operations Async - Event Driven Architecture - Request response via polling - Async Message Dispatch with Deferred Response
+
+        [HttpPost("event/getall")]
+        public async Task<IActionResult> MessageGetAllAsync()
+        {
+            await LogTrafficAsync("POST - MessageGetAllAsync", "Request");
+            return await SendMessageAsync("getall", new TrafficDto(), "POST - MessageGetAll", "traffic-queue");
+        }
+
+        [HttpPost("event/getbyid/{id:long}")]
+        public async Task<IActionResult> MessageGetByIdAsync(long id)
+        {
+            await LogTrafficAsync("POST - MessageGetByIdAsync", "Request");
+            return await SendMessageAsync("getbyid", new TrafficDto { Id = id }, "POST - MessageGetById", "traffic-queue");
+        }
+
+        [HttpPost("event/create")]
+        public async Task<IActionResult> MessageCreateAsync([FromBody] TrafficDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await LogTrafficAsync("POST - MessageCreateAsync", "Request");
+            return await SendMessageAsync("create", dto, "POST - MessageCreate", "traffic-queue");
+        }
+
+        [HttpPut("event/update/{id:long}")]
+        public async Task<IActionResult> MessageUpdateAsync(long id, [FromBody] TrafficDto dto)
+        {
+            if (!ModelState.IsValid || id != dto.Id)
+                return BadRequest("Invalid payload or ID mismatch.");
+
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("PUT - MessageUpdate", "Request");
+            return await SendMessageAsync("update", dto, "PUT - MessageUpdate", "traffic-queue");
+        }
+
+        [HttpGet("event/result/{id:long}")]
+        public async Task<IActionResult> GetResultAsync(long id)
+        {
+            return await GetResultAsyncInternal(id, (action, messageResponse) =>
+            {
+                return action.ToLowerInvariant() switch
+                {
+                    "getall" => JsonSerializer.Deserialize<IEnumerable<TrafficDto>>(messageResponse),
+                    "getbyid" => JsonSerializer.Deserialize<TrafficDto>(messageResponse),
+                    "create" or "update" or "delete" => messageResponse,
+                    _ => null
+                };
+            });
+        }
+
+        [HttpDelete("event/delete/{id:long}")]
+        public async Task<IActionResult> MessageDeleteAsync(long id)
+        {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing is null)
+                return NotFound();
+
+            await LogTrafficAsync("DELETE - MessageDeleteAsync", "Request");
+            return await SendMessageAsync("delete", new TrafficDto { Id = id }, "DELETE - MessageDelete", "traffic-queue");
+        }
+
+        #endregion
+
         #region Additional Methods  
 
         #endregion
 
-        #region Additional Methods Private 
-
-        private async Task LogTraffic(string method, string action)
-        {
-            var dto = new TrafficDto(method, action, DateTime.Now);
-            await _service.AddAsync(dto);
-        }
-
-        #endregion
     }
 }
