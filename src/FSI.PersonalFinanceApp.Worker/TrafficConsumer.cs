@@ -21,7 +21,7 @@ namespace FSI.PersonalFinanceApp.Worker
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            string queueName = "income-queue";
+            string queueName = "traffic-queue";
 
             var factory = new ConnectionFactory
             {
