@@ -72,6 +72,50 @@ O projeto inclui `docker-compose.yml` para facilitar a orquestração de contain
 
 ---
 
+## 📡 Arquitetura Assíncrona e Estilos de Requisições
+
+A API foi desenhada seguindo princípios de **microsserviços desacoplados**, oferecendo **três estilos distintos de comunicação**, cada um alinhado a um padrão arquitetural reconhecido:
+
+### ✅ 1. Requisições Síncronas REST
+**🔹 Arquitetura:** _Request/Response Pattern_
+
+- Comunicação direta entre cliente e serviço via HTTP.
+- Baixo tempo de resposta.
+- Simples de implementar, porém mais acoplado e suscetível a falhas em cascata.
+
+### 🔄 2. Requisições Assíncronas com ASP.NET (async/await)
+**🔹 Arquitetura:** _Reactive Microservices Pattern_
+
+- Opera com `Task`, `async/await` e operações não bloqueantes.
+- Ideal para chamadas I/O-bound (ex: banco, API externa).
+- Escalável e eficiente em servidores de alto tráfego.
+
+### 📨 3. Requisições Assíncronas com Mensageria e Polling
+**🔹 Arquitetura:** _Event-Driven Microservices (com Message Queue + Polling)_
+
+- O cliente **envia um comando** → API publica na fila (RabbitMQ).
+- A API retorna imediatamente um `correlationId` ou `messageId`.
+- Um **Worker** processa a mensagem em background.
+- O cliente pode fazer `GET /result/{id}` para saber o status ou obter o resultado.
+
+#### Fluxo:
+```
+1. Cliente → POST /api/expense-categories/async
+2. API → Retorna: { messageId: "abc-123" }
+3. Worker → Consome da fila e processa
+4. Cliente → GET /api/messaging/result/abc-123
+```
+
+#### Comparativo:
+
+| Estilo de Consumo                      | Padrão Arquitetural                 | Melhor Uso                                |
+|---------------------------------------|-------------------------------------|--------------------------------------------|
+| Síncrono REST                         | Request/Response                    | Consultas rápidas, operações imediatas     |
+| Assíncrono com async/await            | Reactive Microservices              | Escalabilidade de I/O                      |
+| Assíncrono com mensageria e polling   | Event-Driven + Message Queue + Polling | Processos pesados, rastreáveis e desacoplados |
+
+---
+
 ## 🚀 Como executar
 
 ```bash
