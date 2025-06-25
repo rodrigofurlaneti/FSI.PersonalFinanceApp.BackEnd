@@ -21,4 +21,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Domain\Interfaces\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FSI.PersonalFinanceApp.Domain\FSI.PersonalFinanceApp.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
