@@ -246,6 +246,25 @@ Essa estrutura de testes permite — e até incentiva — a adoção da prática
 
 Se desejado, o projeto pode facilmente ser evoluído para adotar o TDD como prática formal, visto que já possui os fundamentos técnicos necessários.
 
+
+## 🔍 Diferença entre DDD e TDD
+
+Embora os termos **DDD (Domain-Driven Design)** e **TDD (Test-Driven Development)** sejam frequentemente utilizados em projetos modernos, é importante entender que eles têm propósitos distintos:
+
+| Aspecto                     | DDD (Domain-Driven Design)                                            | TDD (Test-Driven Development)                                 |
+|----------------------------|------------------------------------------------------------------------|---------------------------------------------------------------|
+| **Tipo**                   | Arquitetura / Estratégia de Modelagem                                 | Prática de Desenvolvimento                                    |
+| **Foco Principal**         | Organizar o sistema em torno do domínio do negócio                    | Garantir qualidade e design limpo via testes                  |
+| **Objetivo**               | Criar um modelo de domínio rico e coeso, com separação de responsabilidades | Escrever testes antes da implementação para guiar o design   |
+| **Aplicação**              | Reflete regras de negócio, entidades, agregados, serviços, repositórios | Testes unitários, de integração e refatoração orientada       |
+| **Benefícios**             | Manutenibilidade, escalabilidade, entendimento do negócio              | Código mais confiável, menos bugs, melhor design              |
+| **Complementaridade**      | Pode ser combinado com TDD para maior eficácia                         | Pode ser aplicado em projetos com ou sem DDD                  |
+
+### ✅ Em resumo:
+- **DDD** ajuda a estruturar o **"o que"** e **"como"** o sistema é organizado com base no negócio.
+- **TDD** ajuda a definir **"quando"** e **"como"** o código deve ser implementado com segurança e qualidade.
+
+O projeto atual aplica **DDD como estrutura arquitetural principal** e possui a base ideal para incorporar **TDD como prática de desenvolvimento.**
 ---
 
 ## 📃 Licença
