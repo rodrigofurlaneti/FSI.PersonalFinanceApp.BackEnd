@@ -21,24 +21,28 @@ namespace FSI.PersonalFinanceApp.Api.Controllers
 
         #region CRUD Operations
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpGet("sync")]
+        [ProducesResponseType(typeof(IEnumerable<ExpenseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<IEnumerable<ExpenseDto>> GetAllSync()
         {
-            try
-            {
-                LogTraffic("GET - GetAll - Expense - Sync", "Request");
+            LogTraffic("GET /expenses/sync", "Request");
 
-                var result = _service.GetAllSync();
+            var result = _service.GetAllSync();
 
-                LogTraffic("GET - GetAll - Expense - Sync", "Response");
+            LogTraffic("GET /expenses/sync", "Response");
 
-                return Ok(result);
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Error getting expenses");
-                return StatusCode(500, "Error processing request");
-            }
+            if (result is null || !result.Any())
+                return NoContent(); // 204
+
+            return Ok(result); // 200
         }
 
         [HttpGet("{id:long}")]
