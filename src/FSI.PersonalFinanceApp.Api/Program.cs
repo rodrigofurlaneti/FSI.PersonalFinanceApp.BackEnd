@@ -5,6 +5,8 @@ using FSI.PersonalFinanceApp.Infrastructure.DependencyInjection; // ✅ Se tiver
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHealthChecks();
+
 // CORS
 builder.Services.AddCors(options =>
 {
@@ -29,15 +31,15 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
+// Rota de health bem simples
+app.MapGet("/health", () => Results.Ok("OK")).AllowAnonymous();
+
 // ⛑️ Middleware global de tratamento de exceções
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// ⚙️ Swagger para ambiente de desenvolvimento
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// ⚙️ Swagger 
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
